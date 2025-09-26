@@ -1,0 +1,26 @@
+{
+	"name": "wellspace",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --hot src/server.ts",
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"prisma:migrate": "bunx prisma migrate dev",
+		"prisma:generate": "bunx prisma generate"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/express": "^5.0.3",
+		"@types/node": "^24.5.2",
+		"prisma": "^6.16.2",
+		"ts-node": "^10.9.2"
+	},
+	"peerDependencies": {
+		"typescript": "^5.9.2"
+	},
+	"dependencies": {
+		"@prisma/client": "^6.16.2",
+		"express": "^5.1.0"
+	}
+}

@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -8,12 +7,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Prisma Model
+// SECTION: ALL Enum Types
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  MARRIED
+  SINGLE
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  B_POSITIVE
+  O_POSITIVE
+  AB_POSITIVE
+  A_NEGATIVE
+  B_NEGATIVE
+  O_NEGATIVE
+  AB_NEGATIVE
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  INPROGRESS
+  COMPLETED
+  CANCELED
+}
+
+// section: Prisma Model
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  password           String
+  role               UserRole   @default(PATIENT)
+  needPasswordChange Boolean    @default(true)
+  status             UserStatus @default(ACTIVE)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // set relation
+  admin Admin?
+
+  // change table name
+  @@map("users")
+}
+
+// section: Admin model
+model Admin {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // set relation
+  user User @relation(fields: [email], references: [email])
+
+  // change table name
+  @@map("admins")
 }

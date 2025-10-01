@@ -2,12 +2,20 @@ import type { Request, Response } from 'express'
 import { UserServices } from './user.services'
 
 const createAdmin = async (req: Request, res: Response) => {
-	const result = await UserServices.createAdminIntoDB(req.body)
-	res.status(201).send({
-		success: true,
-		message: 'Admin Created Successfully',
-		data: result,
-	})
+	try {
+		const result = await UserServices.createAdminIntoDB(req.body)
+		res.status(201).send({
+			success: true,
+			message: 'Admin Created Successfully',
+			data: result,
+		})
+	} catch (error: any) {
+		res.status(500).send({
+			success: false,
+			message: error.name || 'something went wrong!',
+			error,
+		})
+	}
 }
 const getAllUser = async (req: Request, res: Response) => {
 	const payload = req.body

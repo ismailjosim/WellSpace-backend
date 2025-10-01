@@ -10,6 +10,7 @@
 		"prisma:generate": "bunx prisma generate"
 	},
 	"devDependencies": {
+		"@types/bcrypt": "^6.0.0",
 		"@types/bun": "latest",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.3",
@@ -22,6 +23,7 @@
 	},
 	"dependencies": {
 		"@prisma/client": "^6.16.2",
+		"bcryptjs": "^3.0.2",
 		"cors": "^2.8.5",
 		"express": "^5.1.0"
 	}

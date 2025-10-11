@@ -1,5 +1,5 @@
 import type { Admin, Prisma } from '@prisma/client'
-import prisma from '../../config'
+import prisma from '../../../config'
 import { buildWhereCondition } from '../../utils/prismaFilter'
 import { paginationHelper } from '../../utils/paginationHelper'
 

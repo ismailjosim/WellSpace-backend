@@ -3,6 +3,7 @@ import cors from 'cors'
 import config from './config'
 import globalErrorHandler from './app/middlewares/globalErrorHandler'
 import notFound from './app/middlewares/notFound'
+import router from './app/routes'
 
 // App
 const app: Application = express()
@@ -24,6 +25,7 @@ app.use(
 )
 
 // Routes
+app.use('/api/v1', router)
 
 //* Default route
 app.get('/', async (req: Request, res: Response) => {

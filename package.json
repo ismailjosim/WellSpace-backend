@@ -2,6 +2,9 @@
 	"name": "wellspace",
 	"module": "index.ts",
 	"type": "module",
+	"prisma": {
+		"schema": "./prisma/schema"
+	},
 	"scripts": {
 		"dev": "bun run --hot ./src/server.ts",
 		"build": "tsc",

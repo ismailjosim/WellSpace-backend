@@ -1,9 +1,10 @@
 import express, { type Application, type Request, type Response } from 'express'
 import cors from 'cors'
-import config from './config'
+
 import globalErrorHandler from './app/middlewares/globalErrorHandler'
 import notFound from './app/middlewares/notFound'
 import router from './app/routes'
+import { envVars } from './app/config/env'
 
 // App
 const app: Application = express()
@@ -31,7 +32,7 @@ app.use('/api/v1', router)
 app.get('/', async (req: Request, res: Response) => {
 	res.status(201).json({
 		message: 'Server is running..',
-		environment: config.node_env,
+		environment: envVars.NODE_ENV,
 		uptime: process.uptime().toFixed(2) + ' sec',
 		timeStamp: new Date().toISOString(),
 	})

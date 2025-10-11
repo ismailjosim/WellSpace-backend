@@ -3,7 +3,6 @@ import type { Request, Response } from 'express'
 import { UserServices } from './user.services'
 import catchAsync from '../../shared/catchAsync'
 import sendResponse from '../../shared/sendResponse'
-import type { ICreatePatientInput } from './user.interface'
 
 const createAdmin = catchAsync(async (req: Request, res: Response) => {
 	try {
@@ -22,9 +21,8 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
 	}
 })
 const createPatient = async (req: Request, res: Response) => {
-	const result = await UserServices.createPatientIntoDB(
-		req.body as ICreatePatientInput,
-	)
+	const result = await UserServices.createPatientIntoDB(req)
+	console.log(req.body)
 	sendResponse(res, {
 		success: true,
 		statusCode: HttpStatus.CREATED,

@@ -1,14 +1,22 @@
 import { PrismaClient, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import type { ICreatePatientInput } from './user.interface'
-import dotenv from '../../../config/index'
-import { prisma } from '../../shared/prisma'
 
-const createAdminIntoDB = async (payload: any) => {
-	const hashedPassword: string = await bcrypt.hash(payload.password, 12)
+import { envVars } from '../../config/env'
+import { prisma } from '../../config/prisma.config'
+import type { Request } from 'express'
+import { uploadToCloudinary } from '../../config/cloudinary.config'
+
+const createAdminIntoDB = async (req: Request) => {
+	if (req.file) {
+		// upload to cloudinary
+		const result = await uploadToCloudinary(req.file)
+	}
+
+	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
 
 	const userData = {
-		email: payload.admin.email,
+		email: req.body.patient.email,
 		password: hashedPassword,
 		role: UserRole.ADMIN,
 	}
@@ -18,32 +26,35 @@ const createAdminIntoDB = async (payload: any) => {
 			data: userData,
 		})
 		const createdAdminData = await transactionClient.admin.create({
-			data: payload.admin,
+			data: req.body.patient,
 		})
 		return createdAdminData
 	})
 
 	return result
 }
-const createPatientIntoDB = async (payload: ICreatePatientInput) => {
-	const hashedPassword: string = await bcrypt.hash(
-		payload.password,
-		Number(dotenv.bcrypt_salt),
-	)
+const createPatientIntoDB = async (req: Request) => {
+	if (req.file) {
+		// upload to cloudinary
+		const result = await uploadToCloudinary(req.file)
+	}
+
+	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
+
+	const userData = {
+		email: req.body.patient.email,
+		password: hashedPassword,
+		role: UserRole.ADMIN,
+	}
 
 	const result = await prisma.$transaction(async (transactionClient) => {
 		await transactionClient.user.create({
-			data: {
-				email: payload.email,
-				password: hashedPassword,
-			},
+			data: userData,
 		})
-		return await transactionClient.patient.create({
-			data: {
-				name: payload.name,
-				email: payload.email,
-			},
+		const createdAdminData = await transactionClient.admin.create({
+			data: req.body.patient,
 		})
+		return createdAdminData
 	})
 
 	return result

@@ -2,7 +2,7 @@ import { UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/config/prisma.config'
 import type { Request } from 'express'
-import { envVars } from '@/config/env'
+import { passwordManage } from '../../utils/passwordManage'
 
 const createAdminIntoDB = async (req: Request) => {
 	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
@@ -27,9 +27,8 @@ const createAdminIntoDB = async (req: Request) => {
 }
 
 const createPatientIntoDB = async (req: Request) => {
-	const hashedPassword: string = await bcrypt.hash(
+	const hashedPassword: string = await passwordManage.hashingPassword(
 		req.body.password,
-		Number(envVars.BCRYPT_SALT_ROUND),
 	)
 	const cloudinaryUrl = req.file?.path
 

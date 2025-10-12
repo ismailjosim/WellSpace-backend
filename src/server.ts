@@ -1,7 +1,7 @@
 import { Server } from 'http'
 import app from './app'
 
-import { envVars } from './app/config/env'
+import { envVars } from '@/config/env'
 
 async function bootstrap() {
 	// This variable will hold our server instance

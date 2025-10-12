@@ -1,8 +1,8 @@
 import { UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../config/prisma.config'
+import { prisma } from '@/config/prisma.config'
 import type { Request } from 'express'
-import { envVars } from '../../config/env'
+import { envVars } from '@/config/env'
 
 const createAdminIntoDB = async (req: Request) => {
 	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
@@ -41,21 +41,18 @@ const createPatientIntoDB = async (req: Request) => {
 	}
 
 	const result = await prisma.$transaction(async (transactionClient) => {
-		// Create user first
-		const createdUser = await transactionClient.user.create({
+		await transactionClient.user.create({
 			data: {
 				email: payloadData.email,
 				password: hashedPassword,
 			},
 		})
 
-		const createdPatient = await transactionClient.patient.create({
+		return await transactionClient.patient.create({
 			data: {
 				...patientData,
 			},
 		})
-
-		return createdPatient
 	})
 
 	return result

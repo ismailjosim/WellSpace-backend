@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { UserController } from './user.controller'
-import validateRequest from '../../middlewares/validateRequest'
+import validateRequest from '@/middlewares/validateRequest'
 import { UserValidationSchema } from './user.validation'
-import { fileUploader } from '../../config/multer.config'
+import { fileUploader } from '@/config/multer.config'
 
 const router = Router()
 

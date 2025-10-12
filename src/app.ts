@@ -1,10 +1,9 @@
 import express, { type Application, type Request, type Response } from 'express'
 import cors from 'cors'
-
-import globalErrorHandler from './app/middlewares/globalErrorHandler'
-import notFound from './app/middlewares/notFound'
-import router from './app/routes'
-import { envVars } from './app/config/env'
+import globalErrorHandler from '@/middlewares/globalErrorHandler'
+import notFound from '@/middlewares/notFound'
+import router from '@/routes'
+import { envVars } from '@/config/env'
 
 // App
 const app: Application = express()

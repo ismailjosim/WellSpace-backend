@@ -1,13 +1,32 @@
 import multer from 'multer'
-import path from 'path'
+import { CloudinaryStorage } from 'multer-storage-cloudinary'
+import { v2 as cloudinary } from 'cloudinary'
+import { envVars } from './env'
 
-const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, path.join(process.cwd(), '/uploads'))
-	},
-	filename: function (req, file, cb) {
-		const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-		cb(null, file.fieldname + '-' + uniqueSuffix)
+// Configure Cloudinary
+cloudinary.config({
+	cloud_name: envVars.CLOUDINARY.CLOUDINARY_CLOUD_NAME,
+	api_key: envVars.CLOUDINARY.CLOUDINARY_API_KEY,
+	api_secret: envVars.CLOUDINARY.CLOUDINARY_API_SECRET,
+})
+
+// Use CloudinaryStorage
+const storage = new CloudinaryStorage({
+	cloudinary: cloudinary,
+	params: {
+		public_id: (req, file) => {
+			const rawName = file.originalname
+				.split('.')
+				.slice(0, -1)
+				.join('.')
+				.toLowerCase()
+				.replace(/\s+/g, '-')
+				.replace(/[^a-z0-9\-]/g, '-')
+
+			return `${Math.random()
+				.toString(36)
+				.substring(2)}-${Date.now()}-${rawName}`
+		},
 	},
 })
 

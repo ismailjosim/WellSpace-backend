@@ -1,18 +1,10 @@
-import { PrismaClient, UserRole } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import type { ICreatePatientInput } from './user.interface'
-
-import { envVars } from '../../config/env'
 import { prisma } from '../../config/prisma.config'
 import type { Request } from 'express'
-import { uploadToCloudinary } from '../../config/cloudinary.config'
+import { envVars } from '../../config/env'
 
 const createAdminIntoDB = async (req: Request) => {
-	if (req.file) {
-		// upload to cloudinary
-		const result = await uploadToCloudinary(req.file)
-	}
-
 	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
 
 	const userData = {
@@ -33,32 +25,43 @@ const createAdminIntoDB = async (req: Request) => {
 
 	return result
 }
+
 const createPatientIntoDB = async (req: Request) => {
-	if (req.file) {
-		// upload to cloudinary
-		const result = await uploadToCloudinary(req.file)
-	}
+	const hashedPassword: string = await bcrypt.hash(
+		req.body.password,
+		Number(envVars.BCRYPT_SALT_ROUND),
+	)
+	const cloudinaryUrl = req.file?.path
 
-	const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
+	const payloadData = req.body.patient
 
-	const userData = {
-		email: req.body.patient.email,
-		password: hashedPassword,
-		role: UserRole.ADMIN,
+	const patientData = {
+		...payloadData,
+		profilePhoto: cloudinaryUrl,
 	}
 
 	const result = await prisma.$transaction(async (transactionClient) => {
-		await transactionClient.user.create({
-			data: userData,
+		// Create user first
+		const createdUser = await transactionClient.user.create({
+			data: {
+				email: payloadData.email,
+				password: hashedPassword,
+			},
 		})
-		const createdAdminData = await transactionClient.admin.create({
-			data: req.body.patient,
+
+		const createdPatient = await transactionClient.patient.create({
+			data: {
+				...patientData,
+			},
 		})
-		return createdAdminData
+
+		return createdPatient
 	})
 
 	return result
 }
+
+export default createPatientIntoDB
 
 export const UserServices = {
 	createAdminIntoDB,

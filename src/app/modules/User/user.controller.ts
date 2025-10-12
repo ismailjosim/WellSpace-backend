@@ -22,7 +22,6 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
 })
 const createPatient = async (req: Request, res: Response) => {
 	const result = await UserServices.createPatientIntoDB(req)
-	console.log(req.body)
 	sendResponse(res, {
 		success: true,
 		statusCode: HttpStatus.CREATED,

@@ -1,0 +1,77 @@
+// SECTION: ALL Enum Types
+
+// section: Prisma Model
+model User {
+    id                 String     @id @default(uuid())
+    email              String     @unique
+    password           String
+    role               UserRole   @default(PATIENT)
+    needPasswordChange Boolean    @default(true)
+    status             UserStatus @default(ACTIVE)
+    createdAt          DateTime   @default(now())
+    updatedAt          DateTime   @updatedAt
+
+    // set relation
+    admin   Admin?
+    doctor  Doctor?
+    patient Patient?
+
+    // change table name
+    @@map("users")
+}
+
+// section: Admin model
+model Admin {
+    id            String   @id @default(uuid())
+    name          String
+    email         String   @unique
+    profilePhoto  String?
+    contactNumber String
+    isDeleted     Boolean  @default(false)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    // set relation
+    user User @relation(fields: [email], references: [email])
+
+    // change table name
+    @@map("admins")
+}
+
+model Doctor {
+    id                  String   @id @default(uuid())
+    name                String
+    email               String   @unique
+    profilePhoto        String?
+    contactNumber       String
+    address             String
+    registrationNumber  String
+    experience          Int
+    gender              Gender
+    appointmentFee      Int
+    qualification       String
+    currentWorkingPlace String
+    designation         String
+    isDeleted           Boolean  @default(false)
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
+
+    user User @relation(fields: [email], references: [email])
+
+    @@map("doctors")
+}
+
+model Patient {
+    id            String   @id @default(uuid())
+    name          String
+    email         String   @unique
+    profilePhoto  String?
+    contactNumber String?
+    address       String?
+    isDeleted     Boolean  @default(false)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    user          User     @relation(fields: [email], references: [email])
+
+    @@map("patients")
+}

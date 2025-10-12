@@ -1,7 +1,10 @@
+import HttpStatus from 'http-status'
 import type { Request, Response } from 'express'
 import { UserServices } from './user.services'
+import catchAsync from '@/shared/catchAsync'
+import sendResponse from '@/shared/sendResponse'
 
-const createAdmin = async (req: Request, res: Response) => {
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
 	try {
 		const result = await UserServices.createAdminIntoDB(req.body)
 		res.status(201).send({
@@ -16,6 +19,15 @@ const createAdmin = async (req: Request, res: Response) => {
 			error,
 		})
 	}
+})
+const createPatient = async (req: Request, res: Response) => {
+	const result = await UserServices.createPatientIntoDB(req)
+	sendResponse(res, {
+		success: true,
+		statusCode: HttpStatus.CREATED,
+		message: 'Patient Created Successfully',
+		data: result,
+	})
 }
 const getAllUser = async (req: Request, res: Response) => {
 	const payload = req.body
@@ -28,6 +40,7 @@ const getAllUser = async (req: Request, res: Response) => {
 }
 
 export const UserController = {
+	createPatient,
 	createAdmin,
 	getAllUser,
 }

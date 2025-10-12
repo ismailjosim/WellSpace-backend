@@ -1,12 +1,20 @@
 import express, { type Application, type Request, type Response } from 'express'
 import cors from 'cors'
-import { UserRoutes } from './app/modules/User/user.routes'
-import { AdminRoutes } from './app/modules/Admin/admin.routes'
+import globalErrorHandler from '@/middlewares/globalErrorHandler'
+import notFound from '@/middlewares/notFound'
+import router from '@/routes'
+import { envVars } from '@/config/env'
+
 // App
 const app: Application = express()
 
 // middleware
-app.use(cors())
+app.use(
+	cors({
+		origin: 'http://localhost:3000',
+		credentials: true,
+	}),
+)
 
 // * Parser
 app.use(express.json())
@@ -17,16 +25,19 @@ app.use(
 )
 
 // Routes
+app.use('/api/v1', router)
 
 //* Default route
 app.get('/', async (req: Request, res: Response) => {
 	res.status(201).json({
-		success: true,
-		message: 'WellSpace API is running ✅',
+		message: 'Server is running..',
+		environment: envVars.NODE_ENV,
+		uptime: process.uptime().toFixed(2) + ' sec',
+		timeStamp: new Date().toISOString(),
 	})
 })
 
-app.use('/api/v1/user', UserRoutes)
-app.use('/api/v1/admin', AdminRoutes)
+app.use(globalErrorHandler)
+app.use(notFound)
 
 export default app

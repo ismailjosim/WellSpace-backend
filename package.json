@@ -2,21 +2,27 @@
 	"name": "wellspace",
 	"module": "index.ts",
 	"type": "module",
+	"prisma": {
+		"schema": "./prisma/schema"
+	},
 	"scripts": {
-		"dev": "bun run --hot src/server.ts",
+		"dev": "pnpm exec tsx watch ./src/server.ts",
+		"dev:node": "pnpm exec ts-node-dev --respawn --transpile-only ./src/server.ts",
 		"build": "tsc",
 		"start": "node dist/server.js",
-		"prisma:migrate": "bunx prisma migrate dev",
-		"prisma:generate": "bunx prisma generate"
+		"prisma:migrate": "pnpm exec prisma migrate dev",
+		"prisma:generate": "pnpm exec prisma generate"
 	},
 	"devDependencies": {
 		"@types/bcrypt": "^6.0.0",
 		"@types/bun": "latest",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.3",
+		"@types/multer": "^2.0.0",
 		"@types/node": "^24.5.2",
 		"prisma": "^6.16.2",
-		"ts-node": "^10.9.2"
+		"ts-node-dev": "^2.0.0",
+		"tsx": "^4.20.6"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.2"
@@ -24,7 +30,13 @@
 	"dependencies": {
 		"@prisma/client": "^6.16.2",
 		"bcryptjs": "^3.0.2",
+		"cloudinary": "^2.7.0",
 		"cors": "^2.8.5",
-		"express": "^5.1.0"
+		"dotenv": "^17.2.3",
+		"express": "^5.1.0",
+		"http-status": "^2.1.0",
+		"multer": "^2.0.2",
+		"multer-storage-cloudinary": "^4.0.0",
+		"zod": "^4.1.12"
 	}
 }

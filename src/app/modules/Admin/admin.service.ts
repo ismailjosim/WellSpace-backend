@@ -1,7 +1,8 @@
 import type { Admin, Prisma } from '@prisma/client'
-import prisma from '../../config'
+
 import { buildWhereCondition } from '../../utils/prismaFilter'
 import { paginationHelper } from '../../utils/paginationHelper'
+import { prisma } from '../../config/prisma.config'
 
 const getAllAdminFromDB = async (params: any, options: any) => {
 	const { page, limit, skip, sortBy, orderBy } =

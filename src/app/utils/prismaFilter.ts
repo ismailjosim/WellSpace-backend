@@ -1,5 +1,3 @@
-import type { Prisma } from '@prisma/client'
-
 export const pick = <T extends Record<string, unknown>, K extends keyof T>(
 	obj: T,
 	keys: K[],
@@ -14,24 +12,25 @@ export const pick = <T extends Record<string, unknown>, K extends keyof T>(
 }
 
 export function buildWhereCondition<T extends object>(
-	searchAbleFields: (keyof T)[],
+	searchableFields: (keyof T)[],
 	params: Record<string, any>,
-): any {
+): Record<string, any> {
 	const { searchTerm, ...filterData } = params
-	const andConditions: Prisma.AdminWhereInput[] = []
+	const andConditions: any[] = []
 
-	// Add search condition
+	// Search term condition
 	if (searchTerm) {
 		andConditions.push({
-			OR: searchAbleFields.map((field) => ({
+			OR: searchableFields.map((field) => ({
 				[field]: {
-					contains: params.searchTerm,
+					contains: searchTerm,
 					mode: 'insensitive',
 				},
 			})),
 		})
 	}
-	// Add filters dynamically
+
+	// Dynamic filters
 	if (Object.keys(filterData).length > 0) {
 		andConditions.push({
 			AND: Object.keys(filterData).map((key) => ({
@@ -41,6 +40,7 @@ export function buildWhereCondition<T extends object>(
 			})),
 		})
 	}
+
 	return andConditions.length > 0 ? { AND: andConditions } : {}
 }
 

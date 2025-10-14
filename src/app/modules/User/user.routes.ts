@@ -12,7 +12,18 @@ router.post(
 	validateRequest(UserValidationSchema.createPatientValidationSchema),
 	UserController.createPatient,
 )
-router.post('/create-admin', UserController.createAdmin)
+router.post(
+	'/create-admin',
+	fileUploader.multerUpload.single('file'),
+	validateRequest(UserValidationSchema.createAdminValidationSchema),
+	UserController.createAdmin,
+)
+router.post(
+	'/create-doctor',
+	fileUploader.multerUpload.single('file'),
+	validateRequest(UserValidationSchema.createDoctorValidationSchema),
+	UserController.createDoctor,
+)
 router.get('/', UserController.getAllUser)
 
 export const UserRoutes = router

@@ -3,24 +3,10 @@ import type { Request, Response } from 'express'
 import { UserServices } from './user.services'
 import catchAsync from '@/shared/catchAsync'
 import sendResponse from '@/shared/sendResponse'
+import { pick } from '../../utils/prismaFilter'
+import { userFilterableFields } from './user.constant'
 
-const createAdmin = catchAsync(async (req: Request, res: Response) => {
-	try {
-		const result = await UserServices.createAdminIntoDB(req.body)
-		res.status(201).send({
-			success: true,
-			message: 'Admin Created Successfully',
-			data: result,
-		})
-	} catch (error: any) {
-		res.status(500).send({
-			success: false,
-			message: error.name || 'something went wrong!',
-			error,
-		})
-	}
-})
-const createPatient = async (req: Request, res: Response) => {
+const createPatient = catchAsync(async (req: Request, res: Response) => {
 	const result = await UserServices.createPatientIntoDB(req)
 	sendResponse(res, {
 		success: true,
@@ -28,19 +14,41 @@ const createPatient = async (req: Request, res: Response) => {
 		message: 'Patient Created Successfully',
 		data: result,
 	})
-}
-const getAllUser = async (req: Request, res: Response) => {
-	const payload = req.body
-	// const result = await UserServices.createAdminIntoDB(payload)
-	res.status(201).send({
+})
+
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
+	const result = await UserServices.createAdminIntoDB(req)
+	sendResponse(res, {
 		success: true,
-		message: 'All User Retrieved Successfully',
-		data: null,
+		statusCode: HttpStatus.CREATED,
+		message: 'Admin Created Successfully',
+		data: result,
 	})
-}
+})
+const createDoctor = catchAsync(async (req: Request, res: Response) => {
+	const result = await UserServices.createDoctorIntoDB(req)
+	sendResponse(res, {
+		success: true,
+		statusCode: HttpStatus.CREATED,
+		message: 'Doctor Created Successfully',
+		data: result,
+	})
+})
+const getAllUser = catchAsync(async (req: Request, res: Response) => {
+	const filters = pick(req.query, userFilterableFields)
+	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
+	const result = await UserServices.getAllUsersFromDB(filters, options)
+	sendResponse(res, {
+		success: true,
+		statusCode: HttpStatus.OK,
+		message: 'All User Retrieved Successfully',
+		data: result,
+	})
+})
 
 export const UserController = {
 	createPatient,
 	createAdmin,
+	createDoctor,
 	getAllUser,
 }

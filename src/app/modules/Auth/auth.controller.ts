@@ -15,7 +15,7 @@ const login = async (req: Request, res: Response) => {
 		statusCode: StatusCode.OK,
 		message: 'User logged in successfully',
 		data: {
-			...result.user,
+			...result,
 		},
 	})
 }

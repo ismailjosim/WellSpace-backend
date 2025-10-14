@@ -46,6 +46,7 @@ export function buildWhereCondition<T extends object>(
 
 /*
 * search term
+
 [
 	{
 		name: {
@@ -59,5 +60,6 @@ export function buildWhereCondition<T extends object>(
 			mode: 'insensitive',
 		},
 	},
-],
+]
+
 */

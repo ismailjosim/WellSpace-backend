@@ -3,6 +3,8 @@ import { UserController } from './user.controller'
 import validateRequest from '@/middlewares/validateRequest'
 import { UserValidationSchema } from './user.validation'
 import { fileUploader } from '@/config/multer.config'
+import checkAuth from '../../middlewares/checkAuth'
+import { UserRole } from '@prisma/client'
 
 const router = Router()
 
@@ -24,6 +26,10 @@ router.post(
 	validateRequest(UserValidationSchema.createDoctorValidationSchema),
 	UserController.createDoctor,
 )
-router.get('/', UserController.getAllUser)
+router.get(
+	'/',
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT),
+	UserController.getAllUser,
+)
 
 export const UserRoutes = router

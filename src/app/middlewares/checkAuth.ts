@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from 'express'
-import { JWT } from '../utils/jwtToken'
-import { envVars } from '../config/env'
-import { prisma } from '../config/prisma.config'
+import { JWT } from '@/utils/jwtToken'
+import { envVars } from '@/config/env'
+import { prisma } from '@/config/prisma.config'
 import type { JwtPayload } from 'jsonwebtoken'
-import AppError from '../helpers/AppError'
-import StatusCode from '../utils/statusCode'
+import AppError from '@/helpers/AppError'
+import StatusCode from '@/utils/statusCode'
 import { UserStatus } from '@prisma/client'
 
 const checkAuth =

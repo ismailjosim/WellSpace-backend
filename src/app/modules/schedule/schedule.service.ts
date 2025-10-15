@@ -1,8 +1,9 @@
 import { prisma } from '@/config/prisma.config'
 import { generateTimeSlots } from '@/utils/generateTimeSlots'
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
-import { buildWhereCondition } from '../../utils/prismaFilter'
+import { buildWhereCondition } from '@/utils/prismaFilter'
 import type { Prisma } from '@prisma/client'
+import type { JwtPayload } from 'jsonwebtoken'
 
 const createScheduleIntoDb = async (payload: any) => {
 	const slots = generateTimeSlots(payload)
@@ -23,7 +24,11 @@ const createScheduleIntoDb = async (payload: any) => {
 
 	return newSchedules
 }
-const getScheduleForDoctorFromDB = async (filters: any, options: IOptions) => {
+const getScheduleForDoctorFromDB = async (
+	user: JwtPayload,
+	filters: any,
+	options: IOptions,
+) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
 	// const { startDateTime, endDateTime } = filters
@@ -32,18 +37,43 @@ const getScheduleForDoctorFromDB = async (filters: any, options: IOptions) => {
 		filters,
 	)
 
+	// * find only those schedule that are available for specific doctor
+	const doctorSchedules = await prisma.doctorSchedule.findMany({
+		where: {
+			doctor: {
+				email: user.email,
+			},
+		},
+		select: {
+			scheduleId: true,
+		},
+	})
+	const doctorScheduleIds = doctorSchedules.map(
+		(schedule) => schedule.scheduleId,
+	)
+
 	const result = await prisma.schedule.findMany({
 		skip,
 		take: limit,
 
-		where: whereConditions,
+		where: {
+			...whereConditions,
+			id: {
+				notIn: doctorScheduleIds,
+			},
+		},
 		orderBy: {
 			[sortBy]: orderBy,
 		},
 	})
 
 	const total = await prisma.schedule.count({
-		where: whereConditions,
+		where: {
+			...whereConditions,
+			id: {
+				notIn: doctorScheduleIds,
+			},
+		},
 	})
 	return {
 		meta: {

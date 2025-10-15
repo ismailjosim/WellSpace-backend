@@ -3,8 +3,9 @@ import catchAsync from '@/shared/catchAsync'
 import sendResponse from '@/shared/sendResponse'
 import StatusCode from '@/utils/statusCode'
 import { scheduleService } from './schedule.service'
-import { pick } from '../../utils/prismaFilter'
-import AppError from '../../helpers/AppError'
+import { pick } from '@/utils/prismaFilter'
+import AppError from '@/helpers/AppError'
+import type { JwtPayload } from 'jsonwebtoken'
 
 const createSchedule = catchAsync(async (req: Request, res: Response) => {
 	const result = await scheduleService.createScheduleIntoDb(req.body)
@@ -19,7 +20,9 @@ const createSchedule = catchAsync(async (req: Request, res: Response) => {
 const getScheduleForDoctor = catchAsync(async (req: Request, res: Response) => {
 	const filters = pick(req.query, ['startDateTime', 'endDateTime'])
 	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
+	const user = req.user as JwtPayload
 	const result = await scheduleService.getScheduleForDoctorFromDB(
+		user,
 		filters,
 		options,
 	)

@@ -3,7 +3,7 @@ import type { Request, Response } from 'express'
 import { UserServices } from './user.services'
 import catchAsync from '@/shared/catchAsync'
 import sendResponse from '@/shared/sendResponse'
-import { pick } from '../../utils/prismaFilter'
+import { pick } from '@/utils/prismaFilter'
 import { userFilterableFields } from './user.constant'
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {

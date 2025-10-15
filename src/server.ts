@@ -13,10 +13,10 @@ process.on('uncaughtException', (error) => {
 async function bootstrap() {
 	try {
 		await prisma.$connect()
-		console.log('✅ Database connected successfully.')
+		console.log('✅ Database connected successfully')
 
 		server = app.listen(envVars.PORT, () => {
-			console.log(`🚀 Server is running on http://localhost:${envVars.PORT}`)
+			console.log(`🚀 Server is running on PORT: ${envVars.PORT}`)
 		})
 
 		process.on('unhandledRejection', (error) => {

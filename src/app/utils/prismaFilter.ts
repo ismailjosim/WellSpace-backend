@@ -12,14 +12,17 @@ export const pick = <T extends Record<string, unknown>, K extends keyof T>(
 }
 
 export function buildWhereCondition<T extends object>(
-	searchableFields: (keyof T)[],
-	params: Record<string, any>,
+	searchableFields?: (keyof T)[],
+	params?: Record<string, any>,
 ): Record<string, any> {
-	const { searchTerm, ...filterData } = params
+	if (!params || Object.keys(params).length === 0) {
+		return {}
+	}
+	const { searchTerm, startDateTime, endDateTime, ...filterData } = params
 	const andConditions: any[] = []
 
 	// Search term condition
-	if (searchTerm) {
+	if (searchTerm && searchableFields && searchableFields.length > 0) {
 		andConditions.push({
 			OR: searchableFields.map((field) => ({
 				[field]: {
@@ -27,6 +30,24 @@ export function buildWhereCondition<T extends object>(
 					mode: 'insensitive',
 				},
 			})),
+		})
+	}
+
+	// Date range filter for startDateTime
+	if (startDateTime) {
+		andConditions.push({
+			startDateTime: {
+				gte: startDateTime, // Greater than or equal
+			},
+		})
+	}
+
+	// Date range filter for endDateTime
+	if (endDateTime) {
+		andConditions.push({
+			endDateTime: {
+				lte: endDateTime, // Less than or equal
+			},
 		})
 	}
 

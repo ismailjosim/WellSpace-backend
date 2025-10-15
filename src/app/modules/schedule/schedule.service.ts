@@ -1,6 +1,8 @@
-import { addHours, addMinutes, format } from 'date-fns'
 import { prisma } from '@/config/prisma.config'
-import { generateTimeSlots, type ISlots } from '@/utils/generateTimeSlots'
+import { generateTimeSlots } from '@/utils/generateTimeSlots'
+import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
+import { buildWhereCondition } from '../../utils/prismaFilter'
+import type { Prisma } from '@prisma/client'
 
 const createScheduleIntoDb = async (payload: any) => {
 	const slots = generateTimeSlots(payload)
@@ -21,12 +23,108 @@ const createScheduleIntoDb = async (payload: any) => {
 
 	return newSchedules
 }
+const getScheduleForDoctorFromDB = async (filters: any, options: IOptions) => {
+	const { page, limit, skip, sortBy, orderBy } =
+		paginationHelper.calcPagination(options)
+	// const { startDateTime, endDateTime } = filters
+	const whereConditions = buildWhereCondition<Prisma.UserWhereInput>(
+		undefined,
+		filters,
+	)
+
+	const result = await prisma.schedule.findMany({
+		skip,
+		take: limit,
+
+		where: whereConditions,
+		orderBy: {
+			[sortBy]: orderBy,
+		},
+	})
+
+	const total = await prisma.schedule.count({
+		where: whereConditions,
+	})
+	return {
+		meta: {
+			page,
+			limit,
+			total,
+		},
+		data: result,
+	}
+}
+
+const deleteScheduleFromDB = async (id: string) => {
+	return await prisma.schedule.delete({
+		where: {
+			id,
+		},
+	})
+}
+
+const deleteDateRangeScheduleFromDB = async (
+	startDateTime: string,
+	endDateTime: string,
+) => {
+	const whereConditions = {
+		AND: [
+			{
+				startDateTime: {
+					gte: new Date(startDateTime),
+				},
+			},
+			{
+				endDateTime: {
+					lte: new Date(endDateTime),
+				},
+			},
+		],
+	}
+
+	// Check if schedules exist in the range
+	const existingSchedules = await prisma.schedule.findMany({
+		where: whereConditions,
+		select: {
+			id: true,
+			startDateTime: true,
+			endDateTime: true,
+		},
+	})
+
+	// Return early if no schedules found
+	if (existingSchedules.length === 0) {
+		return {
+			count: 0,
+			message: 'No schedules found in the specified date range',
+			deletedSchedules: [],
+		}
+	}
+
+	// Delete schedules using deleteMany (not delete)
+	const deletedSchedules = await prisma.schedule.deleteMany({
+		where: whereConditions,
+	})
+
+	return {
+		count: deletedSchedules.count,
+		deletedSchedules: existingSchedules,
+		dateRange: {
+			start: startDateTime,
+			end: endDateTime,
+		},
+	}
+}
 
 export const scheduleService = {
 	createScheduleIntoDb,
+	getScheduleForDoctorFromDB,
+	deleteScheduleFromDB,
+	deleteDateRangeScheduleFromDB,
 }
 /*
- console.log({ startTime, endTime, startDate, endDate })
+===========================================================
+	console.log({ startTime, endTime, startDate, endDate })
 
 	const intervalTime = 30
 	const schedules = []
@@ -80,6 +178,5 @@ export const scheduleService = {
 		}
 		currentDate.setDate(currentDate.getDate() + 1)
 	}
-
-
+===========================================================
  */

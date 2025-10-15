@@ -16,12 +16,14 @@ router.post(
 )
 router.post(
 	'/create-admin',
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	fileUploader.multerUpload.single('file'),
 	validateRequest(UserValidationSchema.createAdminValidationSchema),
 	UserController.createAdmin,
 )
 router.post(
 	'/create-doctor',
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	fileUploader.multerUpload.single('file'),
 	validateRequest(UserValidationSchema.createDoctorValidationSchema),
 	UserController.createDoctor,

@@ -1,10 +1,10 @@
 import { Prisma, UserRole } from '@prisma/client'
 import { prisma } from '@/config/prisma.config'
 import type { Request } from 'express'
-import { passwordManage } from '../../utils/passwordManage'
-import { paginationHelper, type IOptions } from '../../utils/paginationHelper'
+import { passwordManage } from '@/utils/passwordManage'
+import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
 import { userSearchableFields } from './user.constant'
-import { buildWhereCondition } from '../../utils/prismaFilter'
+import { buildWhereCondition } from '@/utils/prismaFilter'
 
 const createPatientIntoDB = async (req: Request) => {
 	const hashedPassword: string = await passwordManage.hashingPassword(

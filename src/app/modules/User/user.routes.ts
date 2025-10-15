@@ -3,7 +3,7 @@ import { UserController } from './user.controller'
 import validateRequest from '@/middlewares/validateRequest'
 import { UserValidationSchema } from './user.validation'
 import { fileUploader } from '@/config/multer.config'
-import checkAuth from '../../middlewares/checkAuth'
+import checkAuth from '@/middlewares/checkAuth'
 import { UserRole } from '@prisma/client'
 
 const router = Router()

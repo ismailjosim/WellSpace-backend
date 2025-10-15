@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { AdminService } from './admin.service'
-import { pick } from '../../utils/prismaFilter'
+import { pick } from '@/utils/prismaFilter'
 import { adminFilterableFields } from './admin.constant'
 
 const getAllAdmin = async (req: Request, res: Response) => {

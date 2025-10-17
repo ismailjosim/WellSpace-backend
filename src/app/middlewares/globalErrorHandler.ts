@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import type { NextFunction, Request, Response } from 'express'
 import HttpStatus from 'http-status'
 import { ZodError } from 'zod'
-import AppError from '../helpers/AppError'
+import AppError from '@/helpers/AppError'
 
 const globalErrorHandler = (
 	err: any,

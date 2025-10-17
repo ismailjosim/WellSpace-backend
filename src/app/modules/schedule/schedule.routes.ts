@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { ScheduleController } from './schedule.controller'
 import checkAuth from '@/middlewares/checkAuth'
 import { UserRole } from '@prisma/client'
-import validateRequest from '../../middlewares/validateRequest'
+import validateRequest from '@/middlewares/validateRequest'
 import { ScheduleValidation } from './schedule.validation'
 
 const router = Router()

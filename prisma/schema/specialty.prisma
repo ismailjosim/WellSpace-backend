@@ -2,7 +2,7 @@ model Specialties {
     id                String              @id @default(uuid())
     title             String
     icon              String
-    DoctorSpecialties DoctorSpecialties[]
+    doctorSpecialties DoctorSpecialties[]
 
     @@map("specialties")
 }

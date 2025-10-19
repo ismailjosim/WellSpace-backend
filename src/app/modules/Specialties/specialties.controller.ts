@@ -6,7 +6,7 @@ import sendResponse from '@/shared/sendResponse'
 import { SpecialtiesServices } from './specialties.services'
 
 const createSpecialty = catchAsync(async (req: Request, res: Response) => {
-	const result = await SpecialtiesServices.createSpecialtyIntoDB(req.body)
+	const result = await SpecialtiesServices.createSpecialtyIntoDB(req)
 	sendResponse(res, {
 		success: true,
 		statusCode: StatusCode.CREATED,
@@ -23,8 +23,19 @@ const getAllSpecialties = catchAsync(async (req: Request, res: Response) => {
 		data: result,
 	})
 })
+const deleteSpecialty = catchAsync(async (req: Request, res: Response) => {
+	const { id } = req.params
+	const result = await SpecialtiesServices.deleteSpecialtyFromDB(id as string)
+	sendResponse(res, {
+		success: true,
+		statusCode: StatusCode.OK,
+		message: 'All Specialties Retrieved Successfully',
+		data: result,
+	})
+})
 
 export const SpecialtiesController = {
 	createSpecialty,
 	getAllSpecialties,
+	deleteSpecialty,
 }

@@ -2,6 +2,8 @@ import multer from 'multer'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import { v2 as cloudinary } from 'cloudinary'
 import { envVars } from './env'
+import AppError from '../helpers/AppError'
+import StatusCode from '../utils/statusCode'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -31,6 +33,25 @@ const storage = new CloudinaryStorage({
 })
 
 const multerUpload = multer({ storage: storage })
+
+export const deleteFromCloudinary = async (url: string) => {
+	try {
+		const regex = /\/v\d+\/(.*?)\.(jpg|jpeg|png|gif|webp)$/i
+		const match = url.match(regex)
+		if (match && match[1]) {
+			const publicId = match[1]
+			await cloudinary.uploader.destroy(publicId)
+			if (envVars.NODE_ENV === 'development') {
+				console.log(`✅ File deleted: ${publicId}`)
+			}
+		}
+	} catch (error: any) {
+		throw new AppError(
+			StatusCode.BAD_REQUEST,
+			`Cloudinary Image Deletion Failed: ${error.message}`,
+		)
+	}
+}
 
 export const fileUploader = {
 	multerUpload,

@@ -13,9 +13,14 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 		undefined,
 		filters,
 	)
+
+	const finalWhere: Prisma.DoctorWhereInput = {
+		AND: [whereConditions, { isDeleted: false }],
+	}
+
 	const result = await prisma.doctor.findMany({
 		// search query
-		where: whereConditions,
+		where: finalWhere,
 		skip,
 		take: limit,
 		orderBy:
@@ -44,7 +49,7 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	}))
 
 	const total = await prisma.doctor.count({
-		where: whereConditions,
+		where: finalWhere,
 	})
 	return {
 		meta: {
@@ -120,8 +125,58 @@ const updateProfileInfoIntoDB = async (
 		return updatedDoctor
 	})
 }
+const getSingleDoctorByIDFromDB = async (id: string) => {
+	const result = await prisma.doctor.findUnique({
+		where: { id },
+		include: {
+			doctorSpecialties: {
+				include: {
+					specialties: true,
+				},
+			},
+		},
+	})
+
+	if (!result) {
+		throw new AppError(StatusCode.NOT_FOUND, 'Doctor not found')
+	}
+
+	const formattedData = {
+		...result,
+		doctorSpecialties: result.doctorSpecialties.map((ds) => ({
+			id: ds.specialties.id,
+			title: ds.specialties.title,
+			icon: ds.specialties.icon,
+		})),
+	}
+
+	return formattedData
+}
+const deleteDoctorByIDFromDB = async (id: string) => {
+	const isDoctorExist = await prisma.doctor.findUniqueOrThrow({
+		where: { id },
+	})
+
+	if (!isDoctorExist) {
+		throw new AppError(StatusCode.NOT_FOUND, 'Doctor not found')
+	}
+
+	// doctor soft delete
+	const result = await prisma.$transaction(async (trx) => {
+		return await trx.doctor.update({
+			where: { id },
+			data: {
+				isDeleted: true,
+			},
+		})
+	})
+
+	return result
+}
 
 export const DoctorService = {
 	getAllDoctorFromDB,
 	updateProfileInfoIntoDB,
+	getSingleDoctorByIDFromDB,
+	deleteDoctorByIDFromDB,
 }

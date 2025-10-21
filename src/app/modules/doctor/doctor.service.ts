@@ -5,12 +5,17 @@ import type { Prisma } from '@prisma/client'
 import type { IDoctorUpdateInput } from './doctor.interface'
 import AppError from '@/helpers/AppError'
 import StatusCode from '@/utils/statusCode'
+import { doctorSearchableFields } from './doctor.constant'
 
+/*
+ * Get all doctors (paginated & filterable)
+ */
 const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
-	const whereConditions = buildWhereCondition<Prisma.UserWhereInput>(
-		undefined,
+
+	const whereConditions = buildWhereCondition<Prisma.DoctorWhereInput>(
+		doctorSearchableFields as (keyof Prisma.DoctorWhereInput)[],
 		filters,
 	)
 
@@ -19,26 +24,16 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	}
 
 	const result = await prisma.doctor.findMany({
-		// search query
 		where: finalWhere,
 		skip,
 		take: limit,
-		orderBy:
-			sortBy && orderBy
-				? {
-						[sortBy]: orderBy,
-				  }
-				: {
-						createdAt: 'desc',
-				  },
+		orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
 		include: {
-			doctorSpecialties: {
-				include: {
-					specialties: true,
-				},
-			},
+			doctorSpecialties: { include: { specialties: true } },
 		},
 	})
+
+	// Flatten doctorSpecialties
 	const formattedData = result.map((doctor) => ({
 		...doctor,
 		doctorSpecialties: doctor.doctorSpecialties.map((ds) => ({
@@ -48,130 +43,117 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 		})),
 	}))
 
-	const total = await prisma.doctor.count({
-		where: finalWhere,
-	})
+	const total = await prisma.doctor.count({ where: finalWhere })
+
 	return {
-		meta: {
-			page,
-			limit,
-			total,
-		},
+		meta: { page, limit, total },
 		data: formattedData,
 	}
 }
+
+/*
+ * Update doctor profile info (atomic with transaction)
+ */
 const updateProfileInfoIntoDB = async (
 	id: string,
 	payload: Partial<IDoctorUpdateInput>,
 ) => {
 	return await prisma.$transaction(async (tx) => {
-		// 1️⃣ Check if doctor exists
-		const isDoctorExist = await tx.doctor.findUnique({
+		const existingDoctor = await tx.doctor.findUnique({
 			where: { id },
 		})
-		if (!isDoctorExist) {
+		if (!existingDoctor) {
 			throw new AppError(StatusCode.NOT_FOUND, 'Doctor not found')
 		}
 
 		const { specialties, ...doctorData } = payload
 
-		// 2️⃣ Handle specialties updates (add/remove)
+		// --- Handle specialties updates
 		if (specialties && specialties.length > 0) {
-			// --- Delete marked specialties
-			const deletedSpecialtyIds = specialties.filter((s) => s.isDeleted)
-			if (deletedSpecialtyIds.length > 0) {
-				await Promise.all(
-					deletedSpecialtyIds.map((specialty) =>
+			// Delete removed specialties
+			await Promise.all(
+				specialties
+					.filter((s) => s.isDeleted)
+					.map((s) =>
 						tx.doctorSpecialties.deleteMany({
-							where: {
-								doctorId: id,
-								specialtiesId: specialty.specialtyId,
-							},
+							where: { doctorId: id, specialtiesId: s.specialtyId },
 						}),
 					),
-				)
-			}
+			)
 
-			// --- Add new specialties
-			const createdSpecialtyIds = specialties.filter((s) => !s.isDeleted)
-			if (createdSpecialtyIds.length > 0) {
-				await Promise.all(
-					createdSpecialtyIds.map((specialty) =>
+			// Add new specialties
+			await Promise.all(
+				specialties
+					.filter((s) => !s.isDeleted)
+					.map((s) =>
 						tx.doctorSpecialties.create({
-							data: {
-								doctorId: id,
-								specialtiesId: specialty.specialtyId,
-							},
+							data: { doctorId: id, specialtiesId: s.specialtyId },
 						}),
 					),
-				)
-			}
+			)
 		}
 
-		// 3️⃣ Update doctor basic info
+		// --- Update basic doctor info
 		const updatedDoctor = await tx.doctor.update({
 			where: { id },
 			data: doctorData,
-			include: {
-				doctorSpecialties: {
-					include: {
-						specialties: true,
-					},
-				},
-			},
+			include: { doctorSpecialties: { include: { specialties: true } } },
 		})
 
-		// 4️⃣ Return updated doctor (transaction commits automatically)
-		return updatedDoctor
+		// Flatten specialties before returning
+		return {
+			...updatedDoctor,
+			doctorSpecialties: updatedDoctor.doctorSpecialties.map((ds) => ({
+				id: ds.specialties.id,
+				title: ds.specialties.title,
+				icon: ds.specialties.icon,
+			})),
+		}
 	})
 }
+
+/*
+ * Get single doctor by ID
+ */
 const getSingleDoctorByIDFromDB = async (id: string) => {
-	const result = await prisma.doctor.findUnique({
+	const doctor = await prisma.doctor.findUnique({
 		where: { id },
-		include: {
-			doctorSpecialties: {
-				include: {
-					specialties: true,
-				},
-			},
-		},
+		include: { doctorSpecialties: { include: { specialties: true } } },
 	})
 
-	if (!result) {
+	if (!doctor || doctor.isDeleted) {
 		throw new AppError(StatusCode.NOT_FOUND, 'Doctor not found')
 	}
 
-	const formattedData = {
-		...result,
-		doctorSpecialties: result.doctorSpecialties.map((ds) => ({
+	return {
+		...doctor,
+		doctorSpecialties: doctor.doctorSpecialties.map((ds) => ({
 			id: ds.specialties.id,
 			title: ds.specialties.title,
 			icon: ds.specialties.icon,
 		})),
 	}
-
-	return formattedData
 }
+
+/*
+ * Soft delete doctor by ID
+ */
 const deleteDoctorByIDFromDB = async (id: string) => {
-	const isDoctorExist = await prisma.doctor.findUniqueOrThrow({
+	const existingDoctor = await prisma.doctor.findUnique({
 		where: { id },
 	})
 
-	if (!isDoctorExist) {
+	if (!existingDoctor || existingDoctor.isDeleted) {
 		throw new AppError(StatusCode.NOT_FOUND, 'Doctor not found')
 	}
 
-	// doctor soft delete
-	const result = await prisma.$transaction(async (trx) => {
-		return await trx.doctor.update({
-			where: { id },
-			data: {
-				isDeleted: true,
-			},
-		})
+	// Soft delete
+	const updatedDoctor = await prisma.doctor.update({
+		where: { id },
+		data: { isDeleted: true },
 	})
 
-	return result
+	return updatedDoctor
 }
 
 export const DoctorService = {

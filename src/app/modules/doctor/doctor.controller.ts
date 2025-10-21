@@ -11,10 +11,11 @@ const getAllDoctor = catchAsync(async (req: Request, res: Response) => {
 	const filters = pick(req.query, doctorFilterableFields)
 	const result = await DoctorService.getAllDoctorFromDB(filters, options)
 	sendResponse(res, {
-		statusCode: StatusCode.CREATED,
+		statusCode: StatusCode.OK,
 		success: true,
-		message: 'Doctor created successfully!',
-		data: result,
+		message: 'All doctors retrieved successfully!',
+		meta: result.meta,
+		data: result.data,
 	})
 })
 

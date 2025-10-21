@@ -30,7 +30,7 @@ router.post(
 )
 router.get(
 	'/',
-	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT),
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	UserController.getAllUser,
 )
 

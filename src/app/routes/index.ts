@@ -4,7 +4,8 @@ import { AuthRoutes } from '@/modules/Auth/auth.routes'
 import { ScheduleRoutes } from '@/modules/schedule/schedule.routes'
 import { DoctorScheduleRoutes } from '@/modules/doctorSchedule/doctorSchedule.routes'
 import { SpecialtiesRoutes } from '@/modules/Specialties/specialties.routes'
-import { DoctorRoutes } from '../modules/doctor/doctor.route'
+import { DoctorRoutes } from '@/modules/doctor/doctor.route'
+import { PatientRoutes } from '@/modules/patient/patient.route'
 const router = Router()
 
 const moduleRoutes = [
@@ -31,6 +32,10 @@ const moduleRoutes = [
 	{
 		path: '/doctor',
 		route: DoctorRoutes,
+	},
+	{
+		path: '/patient',
+		route: PatientRoutes,
 	},
 ]
 

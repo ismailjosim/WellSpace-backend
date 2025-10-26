@@ -4,6 +4,7 @@ import { DoctorController } from './doctor.controller'
 const router = Router()
 
 router.get('/', DoctorController.getAllDoctor)
+router.post('/suggestion', DoctorController.getAISuggestion)
 router.get('/:id', DoctorController.getSingleDoctorByID)
 router.patch('/:id', DoctorController.updateProfileInfo)
 router.delete('/:id', DoctorController.deleteDoctorByID)

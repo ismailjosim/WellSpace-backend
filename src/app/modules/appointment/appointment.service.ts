@@ -54,6 +54,17 @@ const createAppointmentIntoDB = async (
 				isBooked: true,
 			},
 		})
+
+		// payment options
+		const transactionId = uuidv4()
+		await tnx.payment.create({
+			data: {
+				appointmentId: appointmentResult.id,
+				amount: doctorData.appointmentFee,
+				transactionId,
+			},
+		})
+
 		return appointmentResult
 	})
 

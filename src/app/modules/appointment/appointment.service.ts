@@ -67,7 +67,7 @@ const createAppointmentIntoDB = async (
 			},
 		})
 
-		const session = stripeConfig.checkout.sessions.create({
+		const session = await stripeConfig.checkout.sessions.create({
 			payment_method_types: ['card'],
 			mode: 'payment',
 			customer_email: user.email,

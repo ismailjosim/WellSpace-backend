@@ -118,8 +118,19 @@ const updateProfileInfoIntoDB = async (
  */
 const getSingleDoctorByIDFromDB = async (id: string) => {
 	const doctor = await prisma.doctor.findUnique({
-		where: { id },
-		include: { doctorSpecialties: { include: { specialties: true } } },
+		where: { id, isDeleted: false },
+		include: {
+			doctorSpecialties: {
+				include: {
+					specialties: true,
+				},
+			},
+			doctorSchedules: {
+				include: {
+					schedule: true,
+				},
+			},
+		},
 	})
 
 	if (!doctor || doctor.isDeleted) {

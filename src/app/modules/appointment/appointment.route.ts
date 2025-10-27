@@ -1,15 +1,16 @@
 import { Router } from 'express'
 import { AppointmentController } from './appointment.controller'
 import validateRequest from '@/middlewares/validateRequest'
-// import checkAuth from '@/middlewares/checkAuth';
-// import { UserRole } from '@prisma/client';
+import { AppointmentValidation } from './appointment.validation'
+import { UserRole } from '@prisma/client'
+import checkAuth from '@/middlewares/checkAuth'
 
 const router = Router()
 
 router.post(
 	'/',
-	validateRequest(AppointmentValidation.createAppointmentValidationSchema),
-	// checkAuth(UserRole.DOCTOR), // Uncomment if needed
+	// validateRequest(AppointmentValidation.createAppointmentValidationSchema),
+	checkAuth(UserRole.PATIENT),
 	AppointmentController.createAppointment,
 )
 

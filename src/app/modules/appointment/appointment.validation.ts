@@ -1,11 +1,9 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 const createAppointmentValidationSchema = z.object({
-	body: z.object({
-		// Define validation schema here
-	}),
-});
+	body: z.object({}),
+})
 
 export const AppointmentValidation = {
 	createAppointmentValidationSchema,
-};
+}

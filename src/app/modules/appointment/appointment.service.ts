@@ -3,6 +3,8 @@ import type { JwtPayload } from 'jsonwebtoken'
 import AppError from '../../helpers/AppError'
 import StatusCode from '../../utils/statusCode'
 import { v4 as uuidv4 } from 'uuid'
+import { stripeConfig } from '../../config/stripe.config'
+import { envVars } from '../../config/env'
 
 const createAppointmentIntoDB = async (
 	user: JwtPayload,
@@ -64,6 +66,28 @@ const createAppointmentIntoDB = async (
 				transactionId,
 			},
 		})
+
+		const session = stripeConfig.checkout.sessions.create({
+			payment_method_types: ['card'],
+			mode: 'payment',
+			customer_email: user.email,
+			line_items: [
+				{
+					price_data: {
+						currency: 'usd',
+						product_data: {
+							name: `Appointment With ${doctorData.name}`,
+						},
+						unit_amount: doctorData.appointmentFee * 100,
+					},
+					quantity: 1,
+				},
+			],
+			success_url: `${envVars.FRONTEND_URL}/payment-success`,
+			cancel_url: `${envVars.FRONTEND_URL}/payment-failed`,
+		})
+
+		console.log(session)
 
 		return appointmentResult
 	})

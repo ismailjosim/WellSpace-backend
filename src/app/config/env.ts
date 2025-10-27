@@ -18,6 +18,7 @@ interface EnvConfig {
 		REFRESH_TOKEN_EXPIRES: string
 	}
 	OPEN_ROUTER_API_KEY: string
+	STRIPE_SECRET_KEY: string
 }
 
 const loadEnvVars = (): EnvConfig => {
@@ -35,6 +36,7 @@ const loadEnvVars = (): EnvConfig => {
 		'REFRESH_TOKEN_SECRET',
 		'REFRESH_TOKEN_EXPIRES',
 		'OPEN_ROUTER_API_KEY',
+		'STRIPE_SECRET_KEY',
 	]
 	requiredEnvVars.forEach((key) => {
 		if (!process.env[key]) {
@@ -60,6 +62,7 @@ const loadEnvVars = (): EnvConfig => {
 			REFRESH_TOKEN_EXPIRES: process.env.REFRESH_TOKEN_EXPIRES as string,
 		},
 		OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY as string,
+		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
 	}
 }
 

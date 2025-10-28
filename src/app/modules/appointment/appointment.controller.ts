@@ -4,6 +4,8 @@ import sendResponse from '@/shared/sendResponse'
 import StatusCode from '@/utils/statusCode'
 import { AppointmentService } from './appointment.service'
 import type { JwtPayload } from 'jsonwebtoken'
+import { pick } from '../../utils/prismaFilter'
+import { appointmentFilterableFields } from './appointment.constant'
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user as JwtPayload
@@ -17,7 +19,25 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 		data: result,
 	})
 })
+const getMyAppointment = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
+	const filters = pick(req.query, appointmentFilterableFields)
+	const user = req.user as JwtPayload
+	const result = await AppointmentService.getMyAppointmentFromDB(
+		options,
+		filters,
+		user,
+	)
+
+	sendResponse(res, {
+		statusCode: StatusCode.OK,
+		success: true,
+		message: 'Appointment Retrieved successfully!',
+		data: result,
+	})
+})
 
 export const AppointmentController = {
 	createAppointment,
+	getMyAppointment,
 }

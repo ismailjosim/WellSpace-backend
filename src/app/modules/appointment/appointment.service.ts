@@ -1,10 +1,11 @@
 import { prisma } from '@/config/prisma.config'
 import type { JwtPayload } from 'jsonwebtoken'
-import AppError from '../../helpers/AppError'
-import StatusCode from '../../utils/statusCode'
 import { v4 as uuidv4 } from 'uuid'
 import { stripeConfig } from '../../config/stripe.config'
 import { envVars } from '../../config/env'
+import { paginationHelper, type IOptions } from '../../utils/paginationHelper'
+import { buildWhereCondition } from '../../utils/prismaFilter'
+import { UserRole, type Prisma } from '@prisma/client'
 
 const createAppointmentIntoDB = async (
 	user: JwtPayload,
@@ -96,7 +97,56 @@ const createAppointmentIntoDB = async (
 
 	return result
 }
+const getMyAppointmentFromDB = async (
+	options: IOptions,
+	filters: any,
+	user: JwtPayload,
+) => {
+	const { page, limit, skip, sortBy, orderBy } =
+		paginationHelper.calcPagination(options)
+	const whereConditions = buildWhereCondition<Prisma.AppointmentWhereInput>(
+		undefined,
+		filters,
+	)
+	// Ensure AND array exists
+	if (!('AND' in whereConditions)) {
+		whereConditions.AND = []
+	}
+
+	// Add role-based filter
+	if (user.role === UserRole.PATIENT) {
+		whereConditions.AND.push({
+			patient: { email: user.email },
+		})
+	} else if (user.role === UserRole.DOCTOR) {
+		whereConditions.AND.push({
+			doctor: { email: user.email },
+		})
+	}
+
+	const result = await prisma.appointment.findMany({
+		where: whereConditions,
+		skip,
+		take: limit,
+		orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
+		include:
+			user.role === UserRole.DOCTOR
+				? {
+						patient: true,
+				  }
+				: {
+						doctor: true,
+				  },
+	})
+
+	const total = await prisma.appointment.count({ where: whereConditions })
+	return {
+		meta: { page, limit, total },
+		data: result,
+	}
+}
 
 export const AppointmentService = {
 	createAppointmentIntoDB,
+	getMyAppointmentFromDB,
 }

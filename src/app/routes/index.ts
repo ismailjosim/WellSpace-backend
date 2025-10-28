@@ -9,6 +9,7 @@ import { PatientRoutes } from '@/modules/patient/patient.route'
 import { AppointmentRoutes } from '@/modules/appointment/appointment.route'
 import { AdminRoutes } from '@/modules/Admin/admin.routes'
 import { PrescriptionRoutes } from '../modules/prescription/prescription.route'
+import { ReviewRoutes } from '../modules/review/review.route'
 const router = Router()
 
 const moduleRoutes = [
@@ -51,6 +52,10 @@ const moduleRoutes = [
 	{
 		path: '/prescription',
 		route: PrescriptionRoutes,
+	},
+	{
+		path: '/review',
+		route: ReviewRoutes,
 	},
 ]
 

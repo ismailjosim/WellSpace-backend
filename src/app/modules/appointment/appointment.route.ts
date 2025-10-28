@@ -15,5 +15,10 @@ router.post(
 	checkAuth(UserRole.PATIENT),
 	AppointmentController.createAppointment,
 )
+router.patch(
+	'/status/:appointmentId',
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR),
+	AppointmentController.updateAppointmentStatus,
+)
 
 export const AppointmentRoutes = router

@@ -1,11 +1,13 @@
 import { prisma } from '@/config/prisma.config'
 import type { JwtPayload } from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
-import { stripeConfig } from '../../config/stripe.config'
-import { envVars } from '../../config/env'
-import { paginationHelper, type IOptions } from '../../utils/paginationHelper'
-import { buildWhereCondition } from '../../utils/prismaFilter'
-import { UserRole, type Prisma } from '@prisma/client'
+import { stripeConfig } from '@/config/stripe.config'
+import { envVars } from '@/config/env'
+import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
+import { buildWhereCondition } from '@/utils/prismaFilter'
+import { AppointmentStatus, UserRole, type Prisma } from '@prisma/client'
+import AppError from '../../helpers/AppError'
+import StatusCode from '../../utils/statusCode'
 
 const createAppointmentIntoDB = async (
 	user: JwtPayload,
@@ -146,7 +148,48 @@ const getMyAppointmentFromDB = async (
 	}
 }
 
+const updateAppointmentStatusInfoDB = async (
+	appointmentId: string,
+	user: JwtPayload,
+	status: AppointmentStatus,
+) => {
+	// check if appointment exists
+	const appointmentData = await prisma.appointment.findUniqueOrThrow({
+		where: { id: appointmentId },
+		include: { doctor: true },
+	})
+
+	// role-based access control
+	if (user.role === UserRole.DOCTOR) {
+		// only allow if doctor owns the appointment
+		if (user.email !== appointmentData.doctor.email) {
+			throw new AppError(
+				StatusCode.FORBIDDEN,
+				'You are not authorized to update this appointment',
+			)
+		}
+	} else if (
+		user.role !== UserRole.ADMIN &&
+		user.role !== UserRole.SUPER_ADMIN
+	) {
+		// deny all other roles
+		throw new AppError(
+			StatusCode.FORBIDDEN,
+			'You are not authorized to perform this action',
+		)
+	}
+
+	// perform update
+	const result = await prisma.appointment.update({
+		where: { id: appointmentId },
+		data: { status },
+	})
+
+	return result
+}
+
 export const AppointmentService = {
 	createAppointmentIntoDB,
 	getMyAppointmentFromDB,
+	updateAppointmentStatusInfoDB,
 }

@@ -1,16 +1,8 @@
-import { Router } from 'express'
-import { PaymentController } from './payment.controller'
-// import validateRequest from '@/middlewares/validateRequest';
-// import checkAuth from '@/middlewares/checkAuth';
-// import { UserRole } from '@prisma/client';
+// import { Router } from 'express'
+// import { PaymentController } from './payment.controller'
 
-const router = Router()
+// const router = Router()
 
-router.post(
-	'/webhook',
-	// validateRequest(PaymentValidation.createPaymentValidationSchema),
-	// checkAuth(UserRole.DOCTOR), // Uncomment if needed
-	PaymentController.handleWebhook,
-)
+// router.post('/webhook', PaymentController.handleStripeWebhookEvent)
 
-export const PaymentRoutes = router
+// export const PaymentRoutes = router

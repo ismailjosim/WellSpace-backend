@@ -4,43 +4,36 @@ import sendResponse from '@/shared/sendResponse'
 import StatusCode from '@/utils/statusCode'
 import { PaymentService } from './payment.service'
 import { stripeConfig } from '@/config/stripe.config'
+import { envVars } from '@/config/env'
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET as string
+const webhooksSecret = envVars.STRIPE_WEBHOOK_SECRET
 
-const handleWebhook = catchAsync(async (req: Request, res: Response) => {
-	let event
-
-	try {
+const handleStripeWebhookEvent = catchAsync(
+	async (req: Request, res: Response) => {
 		const sig = req.headers['stripe-signature'] as string
 
-		if (endpointSecret) {
+		let event
+		try {
 			event = stripeConfig.webhooks.constructEvent(
 				req.body,
 				sig,
-				endpointSecret,
+				webhooksSecret,
 			)
-		} else {
-			event = req.body
+		} catch (err: any) {
+			console.error('⚠️ Webhook signature verification failed:', err.message)
+			return res.status(400).send(`Webhook Error: ${err.message}`)
 		}
-	} catch (err: any) {
-		console.error('⚠️  Webhook signature verification failed:', err.message)
-		return sendResponse(res, {
-			statusCode: StatusCode.BAD_REQUEST,
-			success: false,
-			message: `Webhook Error: ${err.message}`,
+		const result = await PaymentService.handleStripeEvent(event)
+
+		sendResponse(res, {
+			statusCode: StatusCode.OK,
+			success: true,
+			message: 'Webhook req send successfully',
+			data: result,
 		})
-	}
-
-	await PaymentService.handleStripeEvent(event)
-
-	sendResponse(res, {
-		statusCode: StatusCode.OK,
-		success: true,
-		message: 'Webhook event received successfully!',
-		data: { received: true },
-	})
-})
+	},
+)
 
 export const PaymentController = {
-	handleWebhook,
+	handleStripeWebhookEvent,
 }

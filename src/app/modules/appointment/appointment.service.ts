@@ -59,7 +59,7 @@ const createAppointmentIntoDB = async (
 
 		// payment options
 		const transactionId = uuidv4()
-		await tnx.payment.create({
+		const paymentData = await tnx.payment.create({
 			data: {
 				appointmentId: appointmentResult.id,
 				amount: doctorData.appointmentFee,
@@ -83,13 +83,15 @@ const createAppointmentIntoDB = async (
 					quantity: 1,
 				},
 			],
+			metadata: {
+				appointmentId: appointmentResult.id,
+				paymentId: paymentData.id,
+			},
 			success_url: `${envVars.FRONTEND_URL}/payment-success`,
 			cancel_url: `${envVars.FRONTEND_URL}/payment-failed`,
 		})
 
-		console.log(session)
-
-		return appointmentResult
+		return { paymentUrl: session.url }
 	})
 
 	return result

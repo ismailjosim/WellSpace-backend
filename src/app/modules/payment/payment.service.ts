@@ -1,5 +1,5 @@
 import { prisma } from '@/config/prisma.config'
-import { AppointmentStatus, PaymentStatus } from '@prisma/client'
+import { PaymentStatus } from '@prisma/client'
 import type Stripe from 'stripe'
 
 const handleStripeEvent = async (event: Stripe.Event): Promise<void> => {
@@ -7,67 +7,32 @@ const handleStripeEvent = async (event: Stripe.Event): Promise<void> => {
 		case 'checkout.session.completed': {
 			const session = event.data.object as Stripe.Checkout.Session
 
-			if (!session) return
-			console.log('✅ Checkout session completed:', session.id)
+			const appointmentId = session.metadata?.appointmentId
+			const paymentId = session?.metadata?.paymentId
 
-			const email = session.customer_email ?? undefined
-			const amount = session.amount_total ? session.amount_total / 100 : 0
-
-			if (!email) {
-				console.warn('⚠️ No email found in checkout session')
-				return
-			}
-
-			// ✅ Update payment record by matching user + amount
-			await prisma.payment.updateMany({
+			await prisma.appointment.update({
 				where: {
-					appointment: {
-						patient: {
-							email,
-						},
-					},
-					amount,
+					id: appointmentId,
 				},
 				data: {
-					status: 'PAID',
-					transactionId:
-						typeof session.payment_intent === 'string'
-							? session.payment_intent
-							: session.payment_intent?.toString() || '',
+					paymentStatus:
+						session.payment_status === 'paid'
+							? PaymentStatus.PAID
+							: PaymentStatus.UNPAID,
 				},
 			})
 
-			// ✅ Optionally, confirm the related appointment
-			await prisma.appointment.updateMany({
+			await prisma.payment.update({
 				where: {
-					patient: {
-						email,
-					},
+					id: paymentId,
 				},
 				data: {
-					status: AppointmentStatus.SCHEDULED,
+					status:
+						session.payment_status === 'paid'
+							? PaymentStatus.PAID
+							: PaymentStatus.UNPAID,
+					paymentGatewayData: JSON.parse(JSON.stringify(session)),
 				},
-			})
-
-			break
-		}
-
-		case 'checkout.session.expired': {
-			const session = event.data.object as Stripe.Checkout.Session
-			if (!session) return
-
-			console.log('⚠️ Checkout session expired:', session.id)
-
-			const paymentIntentId =
-				typeof session.payment_intent === 'string'
-					? session.payment_intent
-					: session.payment_intent?.toString() || null
-
-			if (!paymentIntentId) return
-
-			await prisma.payment.updateMany({
-				where: { transactionId: paymentIntentId },
-				data: { status: PaymentStatus.UNPAID },
 			})
 			break
 		}

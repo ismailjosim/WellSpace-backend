@@ -4,11 +4,19 @@ import globalErrorHandler from '@/middlewares/globalErrorHandler'
 import notFound from '@/middlewares/notFound'
 import router from '@/routes'
 import { envVars } from '@/config/env'
+import { PaymentController } from './app/modules/payment/payment.controller'
 
 // App
 const app: Application = express()
 
 // middleware
+app.post(
+	'/webhook',
+	express.raw({
+		type: 'application/json',
+	}),
+	PaymentController.handleStripeWebhookEvent,
+)
 app.use(
 	cors({
 		origin: 'http://localhost:3000',

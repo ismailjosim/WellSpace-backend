@@ -17,6 +17,9 @@ interface EnvConfig {
 		REFRESH_TOKEN_SECRET: string
 		REFRESH_TOKEN_EXPIRES: string
 	}
+	OPEN_ROUTER_API_KEY: string
+	STRIPE_SECRET_KEY: string
+	STRIPE_WEBHOOK_SECRET: string
 }
 
 const loadEnvVars = (): EnvConfig => {
@@ -33,6 +36,9 @@ const loadEnvVars = (): EnvConfig => {
 		'ACCESS_TOKEN_EXPIRES',
 		'REFRESH_TOKEN_SECRET',
 		'REFRESH_TOKEN_EXPIRES',
+		'OPEN_ROUTER_API_KEY',
+		'STRIPE_SECRET_KEY',
+		'STRIPE_WEBHOOK_SECRET',
 	]
 	requiredEnvVars.forEach((key) => {
 		if (!process.env[key]) {
@@ -57,6 +63,9 @@ const loadEnvVars = (): EnvConfig => {
 			REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET as string,
 			REFRESH_TOKEN_EXPIRES: process.env.REFRESH_TOKEN_EXPIRES as string,
 		},
+		OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY as string,
+		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
+		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string,
 	}
 }
 

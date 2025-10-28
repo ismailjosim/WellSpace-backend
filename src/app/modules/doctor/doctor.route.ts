@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import { DoctorController } from './doctor.controller'
-import validateRequest from '@/middlewares/validateRequest'
-// import checkAuth from '@/middlewares/checkAuth';
-// import { UserRole } from '@prisma/client';
 
 const router = Router()
 
 router.get('/', DoctorController.getAllDoctor)
+router.post('/suggestion', DoctorController.getAISuggestion)
+router.get('/:id', DoctorController.getSingleDoctorByID)
+router.patch('/:id', DoctorController.updateProfileInfo)
+router.delete('/:id', DoctorController.deleteDoctorByID)
+
 export const DoctorRoutes = router

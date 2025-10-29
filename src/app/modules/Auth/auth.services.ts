@@ -174,6 +174,31 @@ const forgetPasswordIntoDB = async (payload: { email: string }) => {
 const setPasswordIntoDB = async (payload: Partial<User>) => {
 	return null
 }
+const getMeFromDB = async (userSession: any) => {
+	const decodedToken = JWT.verifyToken(
+		userSession,
+		envVars.JWT.ACCESS_TOKEN_SECRET,
+	)
+	const userData = await prisma.user.findUniqueOrThrow({
+		where: {
+			email: decodedToken.email,
+			status: UserStatus.ACTIVE,
+		},
+	})
+
+	const { email, role, id, needPasswordChange, status, createdAt, updatedAt } =
+		userData
+
+	return {
+		email,
+		role,
+		id,
+		needPasswordChange,
+		status,
+		createdAt,
+		updatedAt,
+	}
+}
 
 export const AuthServices = {
 	loginIntoDB,
@@ -181,4 +206,5 @@ export const AuthServices = {
 	changePasswordIntoDB,
 	forgetPasswordIntoDB,
 	setPasswordIntoDB,
+	getMeFromDB,
 }

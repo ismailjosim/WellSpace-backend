@@ -3,8 +3,7 @@ import StatusCode from '@/utils/statusCode'
 import sendResponse from '@/shared/sendResponse'
 import { AuthServices } from './auth.services'
 import { setAuthCookie } from '@/utils/setAuthCookie'
-import AppError from '../../helpers/AppError'
-import type { JwtPayload } from 'jsonwebtoken'
+import AppError from '@/helpers/AppError'
 
 const login = async (req: Request, res: Response) => {
 	const result = await AuthServices.loginIntoDB(req.body)
@@ -21,6 +20,19 @@ const login = async (req: Request, res: Response) => {
 		},
 	})
 }
+const getMe = async (req: Request, res: Response) => {
+	const userSession = req.cookies.accessToken
+
+	const result = await AuthServices.getMeFromDB(userSession)
+
+	sendResponse(res, {
+		success: true,
+		statusCode: StatusCode.OK,
+		message: 'User profile retrieved in successfully',
+		data: result,
+	})
+}
+
 const refreshToken = async (req: Request, res: Response) => {
 	const refreshToken = req.body.refreshToken || req.cookies.refreshToken
 	if (!refreshToken) {
@@ -40,6 +52,7 @@ const refreshToken = async (req: Request, res: Response) => {
 		},
 	})
 }
+
 const changePassword = async (req: Request, res: Response) => {
 	const { newPassword, oldPassword } = req.body
 	const user = req.user
@@ -89,4 +102,5 @@ export const AuthControllers = {
 	changePassword,
 	forgetPassword,
 	setPassword,
+	getMe,
 }

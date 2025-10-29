@@ -3,6 +3,8 @@ import catchAsync from '@/shared/catchAsync'
 import sendResponse from '@/shared/sendResponse'
 import StatusCode from '@/utils/statusCode'
 import { PrescriptionService } from './prescription.service'
+import { pick } from '../../utils/prismaFilter'
+import { prescriptionsFilterableFields } from './prescription.const'
 
 const createPrescription = catchAsync(async (req: Request, res: Response) => {
 	const result = await PrescriptionService.createPrescriptionIntoDB(
@@ -19,7 +21,13 @@ const createPrescription = catchAsync(async (req: Request, res: Response) => {
 })
 
 const getMyPrescriptions = catchAsync(async (req: Request, res: Response) => {
-	const prescriptions = await PrescriptionService.getMyPrescriptions(req.user)
+	const filters = pick(req.query, prescriptionsFilterableFields)
+	const options = pick(req.query, ['limit', 'page', 'sortBy', 'orderBy'])
+	const prescriptions = await PrescriptionService.getMyPrescriptionsFromDB(
+		req.user,
+		filters,
+		options,
+	)
 
 	sendResponse(res, {
 		statusCode: StatusCode.OK,

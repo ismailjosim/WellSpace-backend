@@ -33,5 +33,20 @@ router.get(
 	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	UserController.getAllUser,
 )
+router.get(
+	'/profile',
+	checkAuth(
+		UserRole.ADMIN,
+		UserRole.SUPER_ADMIN,
+		UserRole.PATIENT,
+		UserRole.DOCTOR,
+	),
+	UserController.getMyProfile,
+)
+router.patch(
+	'/:id/status',
+	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+	UserController.changeProfileStatus,
+)
 
 export const UserRoutes = router

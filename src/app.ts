@@ -5,6 +5,7 @@ import notFound from '@/middlewares/notFound'
 import router from '@/routes'
 import { envVars } from '@/config/env'
 import { PaymentController } from './app/modules/payment/payment.controller'
+import cookieParser from 'cookie-parser'
 
 // App
 const app: Application = express()
@@ -26,6 +27,7 @@ app.use(
 
 // * Parser
 app.use(express.json())
+app.use(cookieParser())
 app.use(
 	express.urlencoded({
 		extended: true,

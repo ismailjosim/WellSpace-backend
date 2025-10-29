@@ -20,6 +20,13 @@ interface EnvConfig {
 	OPEN_ROUTER_API_KEY: string
 	STRIPE_SECRET_KEY: string
 	STRIPE_WEBHOOK_SECRET: string
+	EMAIL_SENDER: {
+		SMTP_HOST: string
+		SMTP_PORT: string
+		SMTP_USER: string
+		SMTP_PASS: string
+		SMTP_FROM: string
+	}
 }
 
 const loadEnvVars = (): EnvConfig => {
@@ -39,6 +46,11 @@ const loadEnvVars = (): EnvConfig => {
 		'OPEN_ROUTER_API_KEY',
 		'STRIPE_SECRET_KEY',
 		'STRIPE_WEBHOOK_SECRET',
+		'SMTP_HOST',
+		'SMTP_PORT',
+		'SMTP_USER',
+		'SMTP_PASS',
+		'SMTP_FROM',
 	]
 	requiredEnvVars.forEach((key) => {
 		if (!process.env[key]) {
@@ -66,6 +78,13 @@ const loadEnvVars = (): EnvConfig => {
 		OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY as string,
 		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string,
+		EMAIL_SENDER: {
+			SMTP_HOST: process.env.SMTP_HOST as string,
+			SMTP_PORT: process.env.SMTP_PORT as string,
+			SMTP_USER: process.env.SMTP_USER as string,
+			SMTP_PASS: process.env.SMTP_PASS as string,
+			SMTP_FROM: process.env.SMTP_FROM as string,
+		},
 	}
 }
 

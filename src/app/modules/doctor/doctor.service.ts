@@ -31,6 +31,7 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 		orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
 		include: {
 			doctorSpecialties: { include: { specialties: true } },
+			reviews: true,
 		},
 	})
 
@@ -130,6 +131,7 @@ const getSingleDoctorByIDFromDB = async (id: string) => {
 					schedule: true,
 				},
 			},
+			reviews: true,
 		},
 	})
 

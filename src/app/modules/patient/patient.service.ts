@@ -5,6 +5,7 @@ import { prisma } from '@/config/prisma.config'
 import { patientSearchableFields } from './patient.constants'
 import StatusCode from '@/utils/statusCode'
 import AppError from '@/helpers/AppError'
+import type { JwtPayload } from 'jsonwebtoken'
 
 /*
  * Get all patients (paginated & filterable)
@@ -57,20 +58,55 @@ const getPatientByIDFromDB = async (id: string) => {
 /*
  * Update patient info by ID
  */
-const updatePatientInfoByIDIntoDB = async (
-	id: string,
-	payload: Prisma.PatientUpdateInput,
-) => {
-	const updatedPatient = await prisma.patient.update({
-		where: { id },
-		data: payload,
+const updatePatientInfoByIDIntoDB = async (user: JwtPayload, payload: any) => {
+	const { medicalReport, patientHealthData, ...patientData } = payload
+
+	// 1. Find the patient by email
+	const patientInfo = await prisma.patient.findUniqueOrThrow({
+		where: {
+			email: user.email,
+			isDeleted: false,
+		},
 	})
 
-	if (!updatedPatient) {
-		throw new AppError(StatusCode.NOT_FOUND, 'Patient not found')
-	}
+	// 2. Run all updates in a single transaction
+	return await prisma.$transaction(async (tnx) => {
+		// update patient main info
+		const patient = await tnx.patient.update({
+			where: { id: patientInfo.id },
+			data: patientData,
+		})
 
-	return updatedPatient
+		// update or create health data
+		if (patientHealthData) {
+			await tnx.patientHealthData.upsert({
+				where: { patientId: patientInfo.id },
+				update: patientHealthData,
+				create: {
+					...patientHealthData,
+					patientId: patientInfo.id,
+				},
+			})
+		}
+		if (medicalReport) {
+			await tnx.medicalReport.create({
+				data: {
+					...medicalReport,
+					patientId: patientInfo.id,
+				},
+			})
+		}
+		// 3. Return updated data with relations if needed
+		const result = await tnx.patient.findUnique({
+			where: { id: patientInfo.id },
+			include: {
+				patientHealthData: true,
+				medicalReport: true,
+			},
+		})
+
+		return result
+	})
 }
 
 /*
@@ -101,3 +137,21 @@ export const PatientService = {
 	updatePatientInfoByIDIntoDB,
 	deletePatientByIDFromDB,
 }
+
+/*
+ {
+    "name": "Md. Jasim", // update
+    "contactNumber": "01700000000",
+    "medicalReport": { // create
+        "reportName": "Past surgery 01",
+        "reportLink": "report Link 01"
+    },
+    "patientHealthData": { // create or update
+        "gender": "MALE",
+        "dateOfBirth": "02-06-1998",
+        "bloodGroup": "AB-",
+        "height": "1.75",
+        "weight": "55"
+    }
+}
+ */

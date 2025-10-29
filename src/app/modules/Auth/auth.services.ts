@@ -6,6 +6,7 @@ import { envVars } from '@/config/env'
 import AppError from '../../helpers/AppError'
 import StatusCode from '../../utils/statusCode'
 import type { JwtPayload } from 'jsonwebtoken'
+import { sendMail } from '../../utils/sendEmail'
 
 const loginIntoDB = async (payload: Partial<User>) => {
 	const user = await prisma.user.findUniqueOrThrow({
@@ -96,7 +97,7 @@ const changePasswordIntoDB = async (
 	})
 
 	// 2️⃣ Verify old password
-	const isCorrectPass = await passwordManage.checkingPassword(
+	const isCorrectPass: boolean = await passwordManage.checkingPassword(
 		oldPassword,
 		userData.password,
 	)
@@ -129,18 +130,45 @@ const changePasswordIntoDB = async (
 		where: { id: userData.id },
 		data: {
 			password: hashedNewPassword,
+			needPasswordChange: false,
 		},
 	})
 
-	// 7️⃣ Optional: invalidate refresh tokens (if you store them)
-	// await prisma.refreshToken.deleteMany({ where: { userId: userData.id } })
-
 	return {
-		success: true,
 		message: 'Password updated successfully',
 	}
 }
-const forgetPasswordIntoDB = async (payload: Partial<User>) => {
+const forgetPasswordIntoDB = async (payload: { email: string }) => {
+	const userData = await prisma.user.findUniqueOrThrow({
+		where: {
+			email: payload.email,
+			status: UserStatus.ACTIVE,
+		},
+	})
+	const tokenPayload = {
+		userId: userData.id,
+		email: userData.email,
+		role: userData.role,
+	}
+
+	const resetPasswordToken = JWT.generateToken(
+		tokenPayload,
+		envVars.JWT.ACCESS_TOKEN_SECRET,
+		'5m',
+	)
+
+	const resetUILink = `${envVars.FRONTEND_URL}/reset-password?id=${userData.id}&token=${resetPasswordToken}`
+
+	sendMail({
+		to: userData.email,
+		subject: 'Password Reset',
+		templateName: 'forgetPassword',
+		templateData: {
+			name: 'User',
+			resetUILink,
+		},
+	})
+
 	return null
 }
 const setPasswordIntoDB = async (payload: Partial<User>) => {

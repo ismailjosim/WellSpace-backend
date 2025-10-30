@@ -46,6 +46,7 @@
 		"jsonwebtoken": "^9.0.2",
 		"multer": "^2.0.2",
 		"multer-storage-cloudinary": "^4.0.0",
+		"node-cron": "^4.2.1",
 		"nodemailer": "^7.0.10",
 		"openai": "^6.7.0",
 		"uuid": "^13.0.0",

@@ -5,9 +5,14 @@ import { stripeConfig } from '@/config/stripe.config'
 import { envVars } from '@/config/env'
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
 import { buildWhereCondition } from '@/utils/prismaFilter'
-import { AppointmentStatus, UserRole, type Prisma } from '@prisma/client'
-import AppError from '../../helpers/AppError'
-import StatusCode from '../../utils/statusCode'
+import {
+	AppointmentStatus,
+	PaymentStatus,
+	UserRole,
+	type Prisma,
+} from '@prisma/client'
+import AppError from '@/helpers/AppError'
+import StatusCode from '@/utils/statusCode'
 
 const createAppointmentIntoDB = async (
 	user: JwtPayload,
@@ -28,7 +33,7 @@ const createAppointmentIntoDB = async (
 		},
 	})
 
-	const isBooked = await prisma.doctorSchedule.findFirstOrThrow({
+	await prisma.doctorSchedule.findFirstOrThrow({
 		where: {
 			doctorId: payload.doctorId,
 			scheduleId: payload.scheduleId,
@@ -188,8 +193,59 @@ const updateAppointmentStatusInfoDB = async (
 	return result
 }
 
+const cancelUnpaidAppointments = async () => {
+	const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000)
+
+	// find unpaid appointment
+	const unPaidAppointments = await prisma.appointment.findMany({
+		where: {
+			createdAt: {
+				lte: thirtyMinsAgo,
+			},
+			paymentStatus: PaymentStatus.UNPAID,
+		},
+	})
+	const appointmentIdsToCancel = unPaidAppointments.map(
+		(appointment) => appointment.id,
+	)
+	// Delete those appointment also delete info from payment and change status
+	await prisma.$transaction(async (tnx) => {
+		await tnx.payment.deleteMany({
+			where: {
+				appointmentId: {
+					in: appointmentIdsToCancel, // in loop
+				},
+			},
+		})
+		// delete appointment
+		await tnx.appointment.deleteMany({
+			where: {
+				id: {
+					in: appointmentIdsToCancel,
+				},
+			},
+		})
+
+		for (const unpaidAppointment of unPaidAppointments) {
+			// change is books status to false
+			await tnx.doctorSchedule.update({
+				where: {
+					doctorId_scheduleId: {
+						doctorId: unpaidAppointment.doctorId,
+						scheduleId: unpaidAppointment.scheduleId,
+					},
+				},
+				data: {
+					isBooked: false,
+				},
+			})
+		}
+	})
+}
+
 export const AppointmentService = {
 	createAppointmentIntoDB,
 	getMyAppointmentFromDB,
 	updateAppointmentStatusInfoDB,
+	cancelUnpaidAppointments,
 }

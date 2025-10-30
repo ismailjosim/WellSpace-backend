@@ -6,7 +6,10 @@ import router from '@/routes'
 import { envVars } from '@/config/env'
 import { PaymentController } from './app/modules/payment/payment.controller'
 import cookieParser from 'cookie-parser'
-
+import cron from 'node-cron'
+import { AppointmentService } from './app/modules/appointment/appointment.service'
+import AppError from './app/helpers/AppError'
+import StatusCode from './app/utils/statusCode'
 // App
 const app: Application = express()
 
@@ -33,6 +36,19 @@ app.use(
 		extended: true,
 	}),
 )
+
+// TODO: uncomment before deploy
+// cron.schedule('* * * * *', () => {
+// 	try {
+// 		console.log('Node Corn Called At: ', new Date())
+// 		AppointmentService.cancelUnpaidAppointments()
+// 	} catch (error) {
+// 		throw new AppError(
+// 			StatusCode.BAD_REQUEST,
+// 			'Facing Error While Removing Unpaid Appointment',
+// 		)
+// 	}
+// })
 
 // Routes
 app.use('/api/v1', router)

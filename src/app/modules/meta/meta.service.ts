@@ -1,191 +1,194 @@
 import { prisma } from '@/config/prisma.config'
-import { PaymentStatus, UserRole } from '@prisma/client'
+import { PaymentStatus, UserRole, AppointmentStatus } from '@prisma/client'
 import type { JwtPayload } from 'jsonwebtoken'
 import AppError from '@/helpers/AppError'
 import StatusCode from '@/utils/statusCode'
 
-const fetchDashboardMetaDataFromDB = async (user: JwtPayload) => {
-	let metadata
+// Types for better type safety
+interface AppointmentStatusCount {
+	status: AppointmentStatus
+	count: number
+}
 
+interface BarChartDataPoint {
+	month: Date
+	count: number
+}
+
+// Utility function to format appointment status distribution
+const formatAppointmentStatusDistribution = (
+	data: Array<{ status: AppointmentStatus; _count: { id: number } }>,
+): AppointmentStatusCount[] => {
+	return data.map(({ status, _count }) => ({
+		status,
+		count: Number(_count.id),
+	}))
+}
+
+const fetchDashboardMetaDataFromDB = async (user: JwtPayload) => {
+	// Fixed: Correct switch case syntax
 	switch (user.role) {
-		case UserRole.ADMIN || UserRole.ADMIN:
-			metadata = await getAdminMetaData()
-			break
+		case UserRole.ADMIN:
+			return await getAdminMetaData()
 		case UserRole.DOCTOR:
-			metadata = await getDoctorMetaData(user)
-			break
+			return await getDoctorMetaData(user)
 		case UserRole.PATIENT:
-			metadata = await getPatientMetaData(user)
-			break
+			return await getPatientMetaData(user)
 		default:
 			throw new AppError(StatusCode.BAD_REQUEST, 'Invalid user role!')
 	}
-
-	return metadata
 }
 
-// * Patient Meta data function
+// * Patient Meta data function - Optimized with parallel queries
 const getPatientMetaData = async (user: JwtPayload) => {
 	const patientData = await prisma.patient.findUniqueOrThrow({
-		where: {
-			email: user?.email,
-		},
+		where: { email: user?.email },
+		select: { id: true }, // Only select needed field
 	})
 
-	const appointmentCount = await prisma.appointment.count({
-		where: {
-			patientId: patientData.id,
-		},
-	})
-
-	const prescriptionCount = await prisma.prescription.count({
-		where: {
-			patientId: patientData.id,
-		},
-	})
-
-	const reviewCount = await prisma.review.count({
-		where: {
-			patientId: patientData.id,
-		},
-	})
-
-	const appointmentStatusDistribution = await prisma.appointment.groupBy({
-		by: ['status'],
-		_count: { id: true },
-		where: {
-			patientId: patientData.id,
-		},
-	})
-
-	const formattedAppointmentStatusDistribution =
-		appointmentStatusDistribution.map(({ status, _count }) => ({
-			status,
-			count: Number(_count.id),
-		}))
+	// Run all queries in parallel
+	const [
+		appointmentCount,
+		prescriptionCount,
+		reviewCount,
+		appointmentStatusDistribution,
+	] = await Promise.all([
+		prisma.appointment.count({
+			where: { patientId: patientData.id },
+		}),
+		prisma.prescription.count({
+			where: { patientId: patientData.id },
+		}),
+		prisma.review.count({
+			where: { patientId: patientData.id },
+		}),
+		prisma.appointment.groupBy({
+			by: ['status'],
+			_count: { id: true },
+			where: { patientId: patientData.id },
+		}),
+	])
 
 	return {
 		appointmentCount,
 		prescriptionCount,
 		reviewCount,
-		formattedAppointmentStatusDistribution,
+		appointmentStatusDistribution: formatAppointmentStatusDistribution(
+			appointmentStatusDistribution,
+		),
 	}
 }
 
-//* Doctor Meta data function
+//* Doctor Meta data function - Optimized with parallel queries
 const getDoctorMetaData = async (user: JwtPayload) => {
 	const doctorData = await prisma.doctor.findUniqueOrThrow({
-		where: {
-			email: user?.email,
-		},
+		where: { email: user?.email },
+		select: { id: true }, // Only select needed field
 	})
 
-	const appointmentCount = await prisma.appointment.count({
-		where: {
-			doctorId: doctorData.id,
-		},
-	})
-
-	const patientCount = await prisma.appointment.groupBy({
-		by: ['patientId'],
-		_count: {
-			id: true,
-		},
-	})
-
-	const reviewCount = await prisma.review.count({
-		where: {
-			doctorId: doctorData.id,
-		},
-	})
-
-	const totalRevenue = await prisma.payment.aggregate({
-		_sum: {
-			amount: true,
-		},
-		where: {
-			appointment: {
-				doctorId: doctorData.id,
+	// Run all queries in parallel
+	const [
+		appointmentCount,
+		uniquePatients,
+		reviewCount,
+		totalRevenue,
+		appointmentStatusDistribution,
+	] = await Promise.all([
+		prisma.appointment.count({
+			where: { doctorId: doctorData.id },
+		}),
+		prisma.appointment.findMany({
+			where: { doctorId: doctorData.id },
+			distinct: ['patientId'],
+			select: { patientId: true },
+		}),
+		prisma.review.count({
+			where: { doctorId: doctorData.id },
+		}),
+		prisma.payment.aggregate({
+			_sum: { amount: true },
+			where: {
+				appointment: { doctorId: doctorData.id },
+				status: PaymentStatus.PAID,
 			},
-			status: PaymentStatus.PAID,
-		},
-	})
-
-	const appointmentStatusDistribution = await prisma.appointment.groupBy({
-		by: ['status'],
-		_count: { id: true },
-		where: {
-			doctorId: doctorData.id,
-		},
-	})
-
-	const formattedAppointmentStatusDistribution =
-		appointmentStatusDistribution.map(({ status, _count }) => ({
-			status,
-			count: Number(_count.id),
-		}))
+		}),
+		prisma.appointment.groupBy({
+			by: ['status'],
+			_count: { id: true },
+			where: { doctorId: doctorData.id },
+		}),
+	])
 
 	return {
 		appointmentCount,
 		reviewCount,
-		patientCount: patientCount.length,
-		totalRevenue,
-		formattedAppointmentStatusDistribution,
+		patientCount: uniquePatients.length,
+		totalRevenue: totalRevenue._sum.amount || 0,
+		appointmentStatusDistribution: formatAppointmentStatusDistribution(
+			appointmentStatusDistribution,
+		),
 	}
 }
 
-//* admin Meta data function
+//* Admin Meta data function - Optimized with parallel queries
 const getAdminMetaData = async () => {
-	const patientCount = await prisma.patient.count()
-	const doctorCount = await prisma.doctor.count()
-	const adminCount = await prisma.admin.count()
-	const appointmentCount = await prisma.appointment.count()
-	const paymentCount = await prisma.payment.count()
-	const totalRevenue = await prisma.payment.aggregate({
-		_sum: {
-			amount: true,
-		},
-		where: {
-			status: PaymentStatus.PAID,
-		},
-	})
-	const barChartData = await getBarChartData()
-	const pieChartData = await getPieChartData()
+	// Run all base queries and chart data in parallel
+	const [
+		patientCount,
+		doctorCount,
+		adminCount,
+		appointmentCount,
+		paymentCount,
+		totalRevenue,
+		barChartData,
+		pieChartData,
+	] = await Promise.all([
+		prisma.patient.count(),
+		prisma.doctor.count(),
+		prisma.admin.count(),
+		prisma.appointment.count(),
+		prisma.payment.count(),
+		prisma.payment.aggregate({
+			_sum: { amount: true },
+			where: { status: PaymentStatus.PAID },
+		}),
+		getBarChartData(),
+		getPieChartData(),
+	])
+
 	return {
 		patientCount,
 		doctorCount,
 		adminCount,
 		appointmentCount,
 		paymentCount,
-		totalRevenue: totalRevenue._sum.amount,
+		totalRevenue: totalRevenue._sum.amount || 0,
 		barChartData,
 		pieChartData,
 	}
 }
 
-const getBarChartData = async () => {
-	const appointmentCountPerMonth = await prisma.$queryRaw`
-    SELECT
-        DATE_TRUNC('month', "createdAt") as month,
-        CAST(COUNT(*) AS INTEGER) AS count
-    FROM "appointments"
-    GROUP BY month
-    ORDER BY month ASC
-    `
+// Optimized with proper typing and date formatting
+const getBarChartData = async (): Promise<BarChartDataPoint[]> => {
+	const appointmentCountPerMonth = await prisma.$queryRaw<BarChartDataPoint[]>`
+		SELECT
+			DATE_TRUNC('month', "createdAt") as month,
+			CAST(COUNT(*) AS INTEGER) AS count
+		FROM "appointments"
+		WHERE "createdAt" >= NOW() - INTERVAL '12 months'
+		GROUP BY month
+		ORDER BY month ASC
+	`
 	return appointmentCountPerMonth
 }
 
-const getPieChartData = async () => {
+// Optimized with helper function
+const getPieChartData = async (): Promise<AppointmentStatusCount[]> => {
 	const appointmentStatusDistribution = await prisma.appointment.groupBy({
 		by: ['status'],
 		_count: { id: true },
 	})
-	const formattedAppointmentStatusDistribution =
-		appointmentStatusDistribution.map(({ status, _count }) => ({
-			status,
-			count: Number(_count.id),
-		}))
-	return formattedAppointmentStatusDistribution
+	return formatAppointmentStatusDistribution(appointmentStatusDistribution)
 }
 
 export const MetaService = {

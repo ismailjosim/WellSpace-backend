@@ -77,7 +77,7 @@ const createDoctorIntoDB = async (req: Request) => {
 	)
 	const cloudinaryUrl = req.file?.path
 
-	const payloadData = req.body.doctor
+	const { specialties, ...payloadData } = req.body.doctor
 
 	const doctorData = {
 		...payloadData,
@@ -93,11 +93,52 @@ const createDoctorIntoDB = async (req: Request) => {
 			},
 		})
 
-		return await transactionClient.doctor.create({
+		const createDoctorData = await transactionClient.doctor.create({
 			data: {
 				...doctorData,
 			},
 		})
+
+		// Handle specialties relation
+		if (specialties && Array.isArray(specialties) && specialties.length > 0) {
+			// verify all specialties exist
+			const existingSpecialties = await transactionClient.specialties.findMany({
+				where: {
+					id: { in: specialties },
+				},
+				select: { id: true },
+			})
+
+			const existingSpecialtiesIds = existingSpecialties.map((s) => s.id)
+			const invalidSpecialties = specialties.filter(
+				(id: string) => !existingSpecialtiesIds.includes(id),
+			)
+			if (invalidSpecialties.length > 0) {
+				throw new AppError(
+					StatusCode.BAD_REQUEST,
+					`Invalid specialties IDs: ${invalidSpecialties.join(', ')}`,
+				)
+			}
+
+			const doctorSpecialtiesData = specialties.map((specialtyId: string) => ({
+				doctorId: createDoctorData.id,
+				specialtiesId: specialtyId,
+			}))
+
+			await transactionClient.doctorSpecialties.createMany({
+				data: doctorSpecialtiesData,
+			})
+		}
+		// step 4: Return the created doctor data
+		const doctorWithSpecialties = await transactionClient.doctor.findUnique({
+			where: { id: createDoctorData.id },
+			include: {
+				doctorSpecialties: {
+					include: { specialties: true },
+				},
+			},
+		})
+		return doctorWithSpecialties
 	})
 
 	return result

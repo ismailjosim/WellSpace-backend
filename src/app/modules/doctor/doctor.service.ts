@@ -15,13 +15,42 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
 
+	const { specialties, ...otherFilters } = filters
+
 	const whereConditions = buildWhereCondition<Prisma.DoctorWhereInput>(
 		doctorSearchableFields as (keyof Prisma.DoctorWhereInput)[],
-		filters,
+		otherFilters,
 	)
 
+	// Build specialty filter
+	let specialtyFilter: Prisma.DoctorWhereInput = {}
+	if (specialties && specialties.length > 0) {
+		// Handle both single string and array of strings
+		const specialtyArray = Array.isArray(specialties)
+			? specialties
+			: [specialties]
+
+		specialtyFilter = {
+			doctorSpecialties: {
+				some: {
+					specialties: {
+						title: {
+							in: specialtyArray,
+							mode: 'insensitive',
+						},
+					},
+				},
+			},
+		}
+	}
+
+	// doctor > doctorSpecialties > specialties > title
+	// handle multiple specialties: ?specialties=cardiology&specialties=neurology
+
 	const finalWhere: Prisma.DoctorWhereInput = {
-		AND: [whereConditions, { isDeleted: false }],
+		AND: [whereConditions, specialtyFilter, { isDeleted: false }].filter(
+			(condition) => Object.keys(condition).length > 0,
+		),
 	}
 
 	const result = await prisma.doctor.findMany({

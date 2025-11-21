@@ -78,7 +78,7 @@ const createDoctorIntoDB = async (req: Request) => {
 	const cloudinaryUrl = req.file?.path
 
 	const { specialties, ...payloadData } = req.body.doctor
-
+	console.log({ specialties })
 	const doctorData = {
 		...payloadData,
 		profilePhoto: cloudinaryUrl,

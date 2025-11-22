@@ -8,9 +8,12 @@ export const doctorSearchableFields = [
 ]
 
 export const doctorFilterableFields = [
+	'searchTerm',
 	'email',
 	'contactNumber',
 	'gender',
 	'appointmentFee',
-	'specialties',
+	'specialty',
+	'startDateTime',
+	'endDateTime',
 ]

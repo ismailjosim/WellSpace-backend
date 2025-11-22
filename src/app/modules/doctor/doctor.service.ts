@@ -15,8 +15,9 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
 
-	const { specialties, ...otherFilters } = filters
+	const { specialty, ...otherFilters } = filters
 
+	// Build where conditions from other filters
 	const whereConditions = buildWhereCondition<Prisma.DoctorWhereInput>(
 		doctorSearchableFields as (keyof Prisma.DoctorWhereInput)[],
 		otherFilters,
@@ -24,34 +25,35 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 
 	// Build specialty filter
 	let specialtyFilter: Prisma.DoctorWhereInput = {}
-	if (specialties && specialties.length > 0) {
-		// Handle both single string and array of strings
-		const specialtyArray = Array.isArray(specialties)
-			? specialties
-			: [specialties]
+	if (specialty && specialty.length > 0) {
+		const specialtyArray = Array.isArray(specialty) ? specialty : [specialty]
 
 		specialtyFilter = {
 			doctorSpecialties: {
 				some: {
-					specialties: {
-						title: {
-							in: specialtyArray,
-							mode: 'insensitive',
-						},
+					specialtiesId: {
+						in: specialtyArray,
 					},
 				},
 			},
 		}
 	}
 
-	// doctor > doctorSpecialties > specialties > title
-	// handle multiple specialties: ?specialties=cardiology&specialties=neurology
+	// Combine all conditions properly
+	const andConditions: Prisma.DoctorWhereInput[] = [{ isDeleted: false }]
 
-	const finalWhere: Prisma.DoctorWhereInput = {
-		AND: [whereConditions, specialtyFilter, { isDeleted: false }].filter(
-			(condition) => Object.keys(condition).length > 0,
-		),
+	// Only add whereConditions if it has keys
+	if (Object.keys(whereConditions).length > 0) {
+		andConditions.push(whereConditions)
 	}
+
+	// Only add specialtyFilter if it has keys
+	if (Object.keys(specialtyFilter).length > 0) {
+		andConditions.push(specialtyFilter)
+	}
+
+	const finalWhere: Prisma.DoctorWhereInput =
+		andConditions.length > 0 ? { AND: andConditions } : { isDeleted: false }
 
 	const result = await prisma.doctor.findMany({
 		where: finalWhere,

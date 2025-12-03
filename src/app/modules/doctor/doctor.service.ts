@@ -15,7 +15,7 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
 
-	const { specialty, ...otherFilters } = filters
+	const { specialties, ...otherFilters } = filters
 
 	// Build where conditions from other filters
 	const whereConditions = buildWhereCondition<Prisma.DoctorWhereInput>(
@@ -25,8 +25,10 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 
 	// Build specialty filter
 	let specialtyFilter: Prisma.DoctorWhereInput = {}
-	if (specialty && specialty.length > 0) {
-		const specialtyArray = Array.isArray(specialty) ? specialty : [specialty]
+	if (specialties && specialties.length > 0) {
+		const specialtyArray = Array.isArray(specialties)
+			? specialties
+			: [specialties]
 
 		specialtyFilter = {
 			doctorSpecialties: {

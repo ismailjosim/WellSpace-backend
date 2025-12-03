@@ -9,12 +9,7 @@ import { doctorFilterableFields } from './doctor.constant'
 const getAllDoctor = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
 	const filters = pick(req.query, doctorFilterableFields)
-
 	const result = await DoctorService.getAllDoctorFromDB(filters, options)
-
-	// console.log('Raw Query:', req.query)
-	// console.log('Extracted Filters:', filters)
-	// console.log('Query Result Count:', result.data.length)
 
 	sendResponse(res, {
 		statusCode: StatusCode.OK,

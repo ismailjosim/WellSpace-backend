@@ -15,63 +15,98 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
 	const { page, limit, skip, sortBy, orderBy } =
 		paginationHelper.calcPagination(options)
 
-	const { specialties, ...otherFilters } = filters
+	const { searchTerm, specialties, ...filterData } = filters
 
-	// Build where conditions from other filters
-	const whereConditions = buildWhereCondition<Prisma.DoctorWhereInput>(
-		doctorSearchableFields as (keyof Prisma.DoctorWhereInput)[],
-		otherFilters,
-	)
+	const andConditions: Prisma.DoctorWhereInput[] = []
 
-	// Build specialty filter
-	let specialtyFilter: Prisma.DoctorWhereInput = {}
+	if (searchTerm) {
+		andConditions.push({
+			OR: doctorSearchableFields.map((field) => ({
+				[field]: {
+					contains: searchTerm,
+					mode: 'insensitive',
+				},
+			})),
+		})
+	}
+
+	// doctor -> doctor specialties -> specialties -> title
+	// handle multiple specialties: ?specialties=spec1&specialties=spec2
 	if (specialties && specialties.length > 0) {
-		const specialtyArray = Array.isArray(specialties)
+		// Convert to array if single string
+		const specialtiesArray = Array.isArray(specialties)
 			? specialties
 			: [specialties]
 
-		specialtyFilter = {
+		andConditions.push({
 			doctorSpecialties: {
 				some: {
-					specialtiesId: {
-						in: specialtyArray,
+					specialties: {
+						title: {
+							in: specialtiesArray,
+							mode: 'insensitive',
+						},
 					},
 				},
 			},
-		}
+		})
 	}
 
-	// Combine all conditions properly
-	const andConditions: Prisma.DoctorWhereInput[] = [{ isDeleted: false }]
-
-	// Only add whereConditions if it has keys
-	if (Object.keys(whereConditions).length > 0) {
-		andConditions.push(whereConditions)
+	if (Object.keys(filterData).length > 0) {
+		const filterConditions = Object.keys(filterData).map((key) => ({
+			[key]: {
+				equals: (filterData as any)[key],
+			},
+		}))
+		andConditions.push(...filterConditions)
 	}
 
-	// Only add specialtyFilter if it has keys
-	if (Object.keys(specialtyFilter).length > 0) {
-		andConditions.push(specialtyFilter)
-	}
-
-	const finalWhere: Prisma.DoctorWhereInput =
-		andConditions.length > 0 ? { AND: andConditions } : { isDeleted: false }
-
-	const result = await prisma.doctor.findMany({
-		where: finalWhere,
-		skip,
-		take: limit,
-		orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
-		include: {
-			doctorSpecialties: { include: { specialties: true } },
-			reviews: true,
-		},
+	andConditions.push({
+		isDeleted: false,
 	})
 
-	const total = await prisma.doctor.count({ where: finalWhere })
+	const whereConditions: Prisma.DoctorWhereInput =
+		andConditions.length > 0 ? { AND: andConditions } : {}
 
+	const result = await prisma.doctor.findMany({
+		where: whereConditions,
+		skip,
+		take: limit,
+		orderBy:
+			options.sortBy && options.sortBy
+				? { [options.sortBy]: options.orderBy }
+				: { averageRating: 'desc' },
+		include: {
+			doctorSpecialties: {
+				include: {
+					specialties: {
+						select: {
+							title: true,
+						},
+					},
+				},
+			},
+			doctorSchedules: {
+				include: {
+					schedule: true,
+				},
+			},
+			reviews: {
+				select: {
+					rating: true,
+				},
+			},
+		},
+	})
+	const total = await prisma.doctor.count({
+		where: whereConditions,
+	})
 	return {
-		meta: { page, limit, total },
+		meta: {
+			total,
+			page,
+			limit,
+		},
 		data: result,
 	}
 }

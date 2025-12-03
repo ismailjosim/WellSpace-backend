@@ -81,23 +81,3 @@ export function buildWhereCondition<T extends object>(
 
 	return andConditions.length > 0 ? { AND: andConditions } : {}
 }
-
-/*
-* search term
-
-[
-	{
-		name: {
-			contains: params.searchTerm,
-			mode: 'insensitive',
-		},
-	},
-	{
-		email: {
-			contains: params.searchTerm,
-			mode: 'insensitive',
-		},
-	},
-]
-
-*/

@@ -49,6 +49,7 @@ const updatePatientInfoByID = catchAsync(
 			req.user,
 			req.body,
 		)
+		console.log({ user: req.user, data: req.body })
 
 		sendResponse(res, {
 			statusCode: StatusCode.OK,

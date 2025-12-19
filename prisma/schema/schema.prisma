@@ -4,8 +4,5 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // connection URL moved to prisma.config.ts for Prisma 7+ (used for Migrate and client configuration)
-  // See: https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config
+  url      = env("DATABASE_URL")
 }
-
-// we don't need to add any export of any file

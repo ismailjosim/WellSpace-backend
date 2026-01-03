@@ -48,5 +48,16 @@ router.patch(
 	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	UserController.changeProfileStatus,
 )
+router.patch(
+	'/update-my-profile',
+	checkAuth(
+		UserRole.ADMIN,
+		UserRole.SUPER_ADMIN,
+		UserRole.PATIENT,
+		UserRole.DOCTOR,
+	),
+	fileUploader.multerUpload.single('file'),
 
+	UserController.updateMyProfile,
+)
 export const UserRoutes = router

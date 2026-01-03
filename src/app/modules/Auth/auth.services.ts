@@ -175,29 +175,79 @@ const setPasswordIntoDB = async (payload: Partial<User>) => {
 	return null
 }
 const getMeFromDB = async (userSession: any) => {
-	const decodedToken = JWT.verifyToken(
+	const decodedData = JWT.verifyToken(
 		userSession,
 		envVars.JWT.ACCESS_TOKEN_SECRET,
 	)
 	const userData = await prisma.user.findUniqueOrThrow({
 		where: {
-			email: decodedToken.email,
+			email: decodedData.email,
 			status: UserStatus.ACTIVE,
 		},
+		select: {
+			id: true,
+			email: true,
+			role: true,
+			needPasswordChange: true,
+			status: true,
+			createdAt: true,
+			updatedAt: true,
+			admin: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+			doctor: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					address: true,
+					registrationNumber: true,
+					experience: true,
+					gender: true,
+					appointmentFee: true,
+					qualification: true,
+					currentWorkingPlace: true,
+					designation: true,
+					averageRating: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+					doctorSpecialties: {
+						include: {
+							specialties: true,
+						},
+					},
+				},
+			},
+			patient: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					address: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+					patientHealthData: true,
+				},
+			},
+		},
 	})
-
-	const { email, role, id, needPasswordChange, status, createdAt, updatedAt } =
-		userData
-
-	return {
-		email,
-		role,
-		id,
-		needPasswordChange,
-		status,
-		createdAt,
-		updatedAt,
-	}
+	console.log(userData)
+	return userData
 }
 
 export const AuthServices = {

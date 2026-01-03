@@ -268,6 +268,73 @@ const changeProfileStatusIntoDB = async (
 	const { password, ...userData } = updatedUser
 	return userData
 }
+const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
+	// 1️⃣ Get logged-in user
+	const existingUser = await prisma.user.findUniqueOrThrow({
+		where: {
+			email: user.email,
+			status: UserStatus.ACTIVE,
+		},
+	})
+
+	// 2️⃣ Parse body data safely
+	let bodyData: Record<string, any> = {}
+
+	if (req.body?.data) {
+		try {
+			bodyData =
+				typeof req.body.data === 'string'
+					? JSON.parse(req.body.data)
+					: req.body.data
+		} catch (error) {
+			throw new AppError(StatusCode.BAD_REQUEST, 'Invalid profile data format')
+		}
+	}
+
+	// 3️⃣ Prepare update data
+	let updateData: Record<string, any> = {}
+
+	// 4️⃣ Handle image upload (if exists)
+	if (req.file?.path) {
+		updateData.profilePhoto = req.file.path
+	}
+
+	// 5️⃣ Merge role-specific body data
+	updateData = {
+		...updateData,
+		...bodyData,
+	}
+
+	// 6️⃣ Update based on role
+	switch (existingUser.role) {
+		case UserRole.ADMIN:
+			await prisma.admin.update({
+				where: { email: existingUser.email },
+				data: updateData,
+			})
+			break
+
+		case UserRole.DOCTOR:
+			await prisma.doctor.update({
+				where: { email: existingUser.email },
+				data: updateData,
+			})
+			break
+
+		case UserRole.PATIENT:
+			await prisma.patient.update({
+				where: { email: existingUser.email },
+				data: updateData,
+			})
+			break
+
+		default:
+			throw new AppError(StatusCode.FORBIDDEN, 'Invalid user role')
+	}
+
+	// 7️⃣ Return fresh profile
+	return { ...updateData }
+}
 
 export const UserServices = {
 	createAdminIntoDB,
@@ -276,4 +343,5 @@ export const UserServices = {
 	getAllUsersFromDB,
 	getMyProfileFromDB,
 	changeProfileStatusIntoDB,
+	updateMyProfileIntoDB,
 }

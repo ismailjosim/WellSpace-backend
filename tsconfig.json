@@ -27,7 +27,6 @@
 		"noPropertyAccessFromIndexSignature": false,
 
 		// Path Alias Setup
-		"ignoreDeprecations": "6.0",
 		"baseUrl": "./src/app",
 		"paths": {
 			"@/*": ["*"]

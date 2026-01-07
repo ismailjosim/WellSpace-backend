@@ -10,6 +10,8 @@ import type { UserStatus } from '@prisma/client'
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
 	const result = await UserServices.createPatientIntoDB(req)
+	console.log('from controller', req.file)
+
 	sendResponse(res, {
 		success: true,
 		statusCode: HttpStatus.CREATED,
@@ -71,6 +73,18 @@ const changeProfileStatus = catchAsync(async (req: Request, res: Response) => {
 		data: result,
 	})
 })
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+	const result = await UserServices.updateMyProfileIntoDB(
+		req.user as JwtPayload,
+		req,
+	)
+	sendResponse(res, {
+		success: true,
+		statusCode: HttpStatus.OK,
+		message: 'User profile updated successfully',
+		data: result,
+	})
+})
 
 export const UserController = {
 	createPatient,
@@ -79,4 +93,5 @@ export const UserController = {
 	getAllUser,
 	getMyProfile,
 	changeProfileStatus,
+	updateMyProfile,
 }

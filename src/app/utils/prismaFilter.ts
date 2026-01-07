@@ -18,6 +18,7 @@ export function buildWhereCondition<T extends object>(
 	if (!params || Object.keys(params).length === 0) {
 		return {}
 	}
+
 	const { searchTerm, startDateTime, endDateTime, ...filterData } = params
 	const andConditions: any[] = []
 
@@ -37,7 +38,7 @@ export function buildWhereCondition<T extends object>(
 	if (startDateTime) {
 		andConditions.push({
 			startDateTime: {
-				gte: startDateTime, // Greater than or equal
+				gte: new Date(startDateTime),
 			},
 		})
 	}
@@ -46,41 +47,37 @@ export function buildWhereCondition<T extends object>(
 	if (endDateTime) {
 		andConditions.push({
 			endDateTime: {
-				lte: endDateTime, // Less than or equal
+				lte: new Date(endDateTime),
 			},
 		})
 	}
 
-	// Dynamic filters
+	// Dynamic filters - simplified approach
 	if (Object.keys(filterData).length > 0) {
-		andConditions.push({
-			AND: Object.keys(filterData).map((key) => ({
-				[key]: {
-					equals: filterData[key],
-				},
-			})),
+		Object.keys(filterData).forEach((key) => {
+			const value = filterData[key]
+
+			// Skip empty values
+			if (value === null || value === undefined || value === '') {
+				return
+			}
+
+			// For string values, use contains with insensitive mode
+			// For other values (numbers, booleans, enums), use equals directly
+			if (typeof value === 'string') {
+				andConditions.push({
+					[key]: {
+						contains: value,
+						mode: 'insensitive',
+					},
+				})
+			} else {
+				andConditions.push({
+					[key]: value,
+				})
+			}
 		})
 	}
 
 	return andConditions.length > 0 ? { AND: andConditions } : {}
 }
-
-/*
-* search term
-
-[
-	{
-		name: {
-			contains: params.searchTerm,
-			mode: 'insensitive',
-		},
-	},
-	{
-		email: {
-			contains: params.searchTerm,
-			mode: 'insensitive',
-		},
-	},
-]
-
-*/

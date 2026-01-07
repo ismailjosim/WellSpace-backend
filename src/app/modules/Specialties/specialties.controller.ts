@@ -4,6 +4,7 @@ import StatusCode from '@/utils/statusCode'
 import catchAsync from '@/shared/catchAsync'
 import sendResponse from '@/shared/sendResponse'
 import { SpecialtiesServices } from './specialties.services'
+import { pick } from '../../utils/prismaFilter'
 
 const createSpecialty = catchAsync(async (req: Request, res: Response) => {
 	const result = await SpecialtiesServices.createSpecialtyIntoDB(req)
@@ -15,12 +16,18 @@ const createSpecialty = catchAsync(async (req: Request, res: Response) => {
 	})
 })
 const getAllSpecialties = catchAsync(async (req: Request, res: Response) => {
-	const result = await SpecialtiesServices.getAllSpecialtiesFromDB()
+	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
+	const filters = pick(req.query, ['title'])
+	const result = await SpecialtiesServices.getAllSpecialtiesFromDB(
+		filters,
+		options,
+	)
 	sendResponse(res, {
 		success: true,
 		statusCode: StatusCode.OK,
 		message: 'All Specialties Retrieved Successfully',
-		data: result,
+		meta: result.meta,
+		data: result.data,
 	})
 })
 const deleteSpecialty = catchAsync(async (req: Request, res: Response) => {

@@ -4,6 +4,7 @@ import sendResponse from '@/shared/sendResponse'
 import { AuthServices } from './auth.services'
 import { setAuthCookie } from '@/utils/setAuthCookie'
 import AppError from '@/helpers/AppError'
+import catchAsync from '../../shared/catchAsync'
 
 const login = async (req: Request, res: Response) => {
 	const result = await AuthServices.loginIntoDB(req.body)
@@ -80,27 +81,30 @@ const forgetPassword = async (req: Request, res: Response) => {
 		},
 	})
 }
-const setPassword = async (req: Request, res: Response) => {
-	const result = await AuthServices.loginIntoDB(req.body)
-	setAuthCookie(res, {
-		accessToken: result.accessToken,
-		refreshToken: result.refreshToken,
-	})
-	sendResponse(res, {
-		success: true,
-		statusCode: StatusCode.OK,
-		message: 'User logged in successfully',
-		data: {
-			...result,
-		},
-	})
-}
+const resetPassword = catchAsync(
+	async (req: Request & { user?: any }, res: Response) => {
+		// Extract token from Authorization header (remove "Bearer " prefix)
+		const authHeader = req.headers.authorization
+		// console.log({ authHeader })
+		const token = authHeader ? authHeader.replace('Bearer ', '') : null
+		const user = req.user // Will be populated if authenticated via middleware
+
+		await AuthServices.resetPasswordIntoDB(token, req.body, user)
+
+		sendResponse(res, {
+			success: true,
+			statusCode: StatusCode.OK,
+			message: 'Password Reset!',
+			data: null,
+		})
+	},
+)
 
 export const AuthControllers = {
 	login,
 	refreshToken,
 	changePassword,
 	forgetPassword,
-	setPassword,
+	resetPassword,
 	getMe,
 }

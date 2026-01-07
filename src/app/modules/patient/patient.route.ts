@@ -12,8 +12,13 @@ router.get(
 )
 router.get('/:id', PatientController.getPatientByID)
 router.patch(
-	'/',
-	checkAuth(UserRole.PATIENT),
+	'/:id',
+	checkAuth(
+		UserRole.PATIENT,
+		UserRole.ADMIN,
+		UserRole.SUPER_ADMIN,
+		UserRole.DOCTOR,
+	),
 	PatientController.updatePatientInfoByID,
 )
 router.delete(

@@ -6,5 +6,3 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// we don't need to add any export of any file

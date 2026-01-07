@@ -171,33 +171,150 @@ const forgetPasswordIntoDB = async (payload: { email: string }) => {
 
 	return null
 }
-const setPasswordIntoDB = async (payload: Partial<User>) => {
-	return null
+const resetPasswordIntoDB = async (
+	token: string | null,
+	payload: { email?: string; password: string },
+	user?: { email: string },
+) => {
+	let userEmail: string
+
+	// Case 1: Token-based reset (from forgot password email)
+	if (token) {
+		const decodedToken = JWT.verifyToken(token, envVars.JWT.ACCESS_TOKEN_SECRET)
+
+		if (!decodedToken) {
+			throw new AppError(
+				StatusCode.FORBIDDEN,
+				'Invalid or expired reset token!',
+			)
+		}
+
+		// Verify email from token matches the email in payload
+		if (payload.email && decodedToken.email !== payload.email) {
+			throw new AppError(
+				StatusCode.FORBIDDEN,
+				'Email mismatch! Invalid reset request.',
+			)
+		}
+
+		userEmail = decodedToken.email
+	}
+	// Case 2: Authenticated user with needPasswordChange (newly created admin/doctor)
+	else if (user && user.email) {
+		console.log({ user }, 'needPasswordChange')
+		const authenticatedUser = await prisma.user.findUniqueOrThrow({
+			where: {
+				email: user.email,
+				status: UserStatus.ACTIVE,
+			},
+		})
+
+		// Verify user actually needs password change
+		if (!authenticatedUser.needPasswordChange) {
+			throw new AppError(
+				StatusCode.BAD_REQUEST,
+				"You don't need to reset your password. Use change password instead.",
+			)
+		}
+
+		userEmail = user.email
+	} else {
+		throw new AppError(
+			StatusCode.BAD_REQUEST,
+			'Invalid request. Either provide a valid token or be authenticated.',
+		)
+	}
+
+	// hash password
+	// Check password
+	const password = await passwordManage.hashingPassword(
+		payload?.password as string,
+	)
+
+	// update into database
+	await prisma.user.update({
+		where: {
+			email: userEmail,
+		},
+		data: {
+			password,
+			needPasswordChange: false,
+		},
+	})
 }
 const getMeFromDB = async (userSession: any) => {
-	const decodedToken = JWT.verifyToken(
+	const decodedData = JWT.verifyToken(
 		userSession,
 		envVars.JWT.ACCESS_TOKEN_SECRET,
 	)
 	const userData = await prisma.user.findUniqueOrThrow({
 		where: {
-			email: decodedToken.email,
+			email: decodedData.email,
 			status: UserStatus.ACTIVE,
 		},
+		select: {
+			id: true,
+			email: true,
+			role: true,
+			needPasswordChange: true,
+			status: true,
+			createdAt: true,
+			updatedAt: true,
+			admin: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+			doctor: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					address: true,
+					registrationNumber: true,
+					experience: true,
+					gender: true,
+					appointmentFee: true,
+					qualification: true,
+					currentWorkingPlace: true,
+					designation: true,
+					averageRating: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+					doctorSpecialties: {
+						include: {
+							specialties: true,
+						},
+					},
+				},
+			},
+			patient: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					profilePhoto: true,
+					contactNumber: true,
+					address: true,
+					isDeleted: true,
+					createdAt: true,
+					updatedAt: true,
+					patientHealthData: true,
+				},
+			},
+		},
 	})
-
-	const { email, role, id, needPasswordChange, status, createdAt, updatedAt } =
-		userData
-
-	return {
-		email,
-		role,
-		id,
-		needPasswordChange,
-		status,
-		createdAt,
-		updatedAt,
-	}
+	return userData
 }
 
 export const AuthServices = {
@@ -205,6 +322,6 @@ export const AuthServices = {
 	refreshTokenFromDB,
 	changePasswordIntoDB,
 	forgetPasswordIntoDB,
-	setPasswordIntoDB,
+	resetPasswordIntoDB,
 	getMeFromDB,
 }

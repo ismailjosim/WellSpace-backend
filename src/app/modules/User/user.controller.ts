@@ -10,6 +10,8 @@ import type { UserStatus } from '@prisma/client'
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
 	const result = await UserServices.createPatientIntoDB(req)
+	console.log('from controller', req.file)
+
 	sendResponse(res, {
 		success: true,
 		statusCode: HttpStatus.CREATED,

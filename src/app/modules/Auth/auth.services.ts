@@ -246,7 +246,6 @@ const getMeFromDB = async (userSession: any) => {
 			},
 		},
 	})
-	console.log(userData)
 	return userData
 }
 

@@ -7,14 +7,14 @@ const router = Router()
 
 router.get(
 	'/',
-	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+	// checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	DoctorController.getAllDoctor,
 )
 router.post('/suggestion', DoctorController.getAISuggestion)
 
 router.get(
 	'/:id',
-	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+	// checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 	DoctorController.getSingleDoctorByID,
 )
 router.patch(

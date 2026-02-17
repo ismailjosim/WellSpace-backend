@@ -84,7 +84,13 @@ const getScheduleForDoctorFromDB = async (
 		data: result,
 	}
 }
-
+const getScheduleByIdFromDB = async (id: string) => {
+	return await prisma.schedule.findUnique({
+		where: {
+			id,
+		},
+	})
+}
 const deleteScheduleFromDB = async (id: string) => {
 	return await prisma.schedule.delete({
 		where: {
@@ -149,6 +155,7 @@ const deleteDateRangeScheduleFromDB = async (
 export const scheduleService = {
 	createScheduleIntoDb,
 	getScheduleForDoctorFromDB,
+	getScheduleByIdFromDB,
 	deleteScheduleFromDB,
 	deleteDateRangeScheduleFromDB,
 }

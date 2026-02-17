@@ -140,10 +140,34 @@ const getMyAppointmentFromDB = async (
 			user.role === UserRole.DOCTOR
 				? {
 						patient: true,
-				  }
+						schedule: true,
+						prescription: true,
+						reviews: true,
+						payment: true,
+						doctor: {
+							include: {
+								doctorSpecialties: {
+									include: { specialties: true },
+								},
+							},
+						},
+					}
 				: {
-						doctor: true,
-				  },
+						doctor: {
+							include: {
+								doctorSpecialties: {
+									include: {
+										specialties: true,
+									},
+								},
+							},
+						},
+						schedule: true,
+						prescription: true,
+						reviews: true,
+						payment: true,
+						patient: true,
+					},
 	})
 
 	const total = await prisma.appointment.count({ where: whereConditions })

@@ -47,6 +47,18 @@ const deleteSchedule = catchAsync(async (req: Request, res: Response) => {
 	})
 })
 
+const getScheduleById = catchAsync(async (req: Request, res: Response) => {
+	const result = await scheduleService.getScheduleByIdFromDB(
+		req.params.id as string,
+	)
+	sendResponse(res, {
+		statusCode: StatusCode.OK,
+		success: true,
+		message: `ID: ${req.params.id} schedule retrieved successfully`,
+		data: result,
+	})
+})
+
 const deleteDateRangeSchedule = catchAsync(
 	async (req: Request, res: Response) => {
 		const { startDateTime, endDateTime } = req.query as {
@@ -98,6 +110,7 @@ const deleteDateRangeSchedule = catchAsync(
 export const ScheduleController = {
 	createSchedule,
 	getScheduleForDoctor,
+	getScheduleById,
 	deleteSchedule,
 	deleteDateRangeSchedule,
 }

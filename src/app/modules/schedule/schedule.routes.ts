@@ -20,6 +20,17 @@ router.get(
 	ScheduleController.getScheduleForDoctor,
 )
 
+router.get(
+	'/:id',
+	checkAuth(
+		UserRole.SUPER_ADMIN,
+		UserRole.ADMIN,
+		UserRole.DOCTOR,
+		UserRole.PATIENT,
+	),
+	ScheduleController.getScheduleById,
+)
+
 router.delete(
 	'/delete-range',
 	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
@@ -28,7 +39,12 @@ router.delete(
 
 router.delete(
 	'/:id',
-	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+	checkAuth(
+		UserRole.ADMIN,
+		UserRole.SUPER_ADMIN,
+		UserRole.DOCTOR,
+		UserRole.PATIENT,
+	),
 	ScheduleController.deleteSchedule,
 )
 

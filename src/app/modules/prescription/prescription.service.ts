@@ -21,7 +21,7 @@ const createPrescriptionIntoDB = async (
 		where: {
 			id: payload.appointmentId,
 			status: AppointmentStatus.COMPLETED,
-			paymentStatus: PaymentStatus.PAID,
+			// paymentStatus: PaymentStatus.PAID, // TODO: uncomment this when payment flow is implemented
 		},
 		include: {
 			doctor: true,

@@ -1,35 +1,19 @@
 {
 	"compilerOptions": {
-		// Environment setup & latest features
-		"lib": ["ESNext"],
-		"target": "ESNext",
-		"module": "Preserve",
-		"moduleDetection": "force",
-		"jsx": "react-jsx",
-		"allowJs": true,
-
-		// Bundler mode (perfect for Next.js or Bun)
-		"moduleResolution": "bundler",
-		"allowImportingTsExtensions": true,
-		"verbatimModuleSyntax": true,
-		"noEmit": true,
-
-		// Best practices
+		"target": "ES2022",
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"rootDir": "./src",
+		"outDir": "./dist",
 		"strict": true,
+		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
 
-		// Optional stricter flags
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false,
-
-		// Path Alias Setup
 		"baseUrl": "./src/app",
 		"paths": {
 			"@/*": ["*"]
 		}
-	}
+	},
+	"include": ["src"],
+	"exclude": ["node_modules", "dist"]
 }

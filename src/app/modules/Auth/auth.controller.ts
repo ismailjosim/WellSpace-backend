@@ -36,11 +36,13 @@ const getMe = async (req: Request, res: Response) => {
 
 const refreshToken = async (req: Request, res: Response) => {
 	const refreshToken = req.body.refreshToken || req.cookies.refreshToken
+	// console.log({ refreshController: refreshToken })
 	if (!refreshToken) {
 		throw new AppError(StatusCode.BAD_REQUEST, 'No Refresh Token received')
 	}
 
 	const loginInfo = await AuthServices.refreshTokenFromDB(refreshToken)
+	// console.log({ loginInfo })
 
 	setAuthCookie(res, loginInfo)
 

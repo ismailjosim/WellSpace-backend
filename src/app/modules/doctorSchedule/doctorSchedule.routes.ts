@@ -7,6 +7,12 @@ import { DoctorScheduleValidation } from './doctorSchedule.validation'
 
 const router = Router()
 
+/**
+ * API ENDPOINT: /doctor-schedule/
+ *
+ * Get all doctor schedule with filtering
+ */
+
 router.post(
 	'/',
 	validateRequest(
@@ -15,8 +21,28 @@ router.post(
 	checkAuth(UserRole.DOCTOR),
 	DoctorScheduleController.createDoctorSchedule,
 )
-// router.get('/', ScheduleController.getScheduleForDoctor)
-// router.delete('/delete-range', ScheduleController.deleteDateRangeSchedule)
-// router.delete('/:id', ScheduleController.deleteSchedule)
+
+router.get(
+	'/',
+	checkAuth(
+		UserRole.SUPER_ADMIN,
+		UserRole.ADMIN,
+		UserRole.DOCTOR,
+		UserRole.PATIENT,
+	),
+	DoctorScheduleController.getAllDoctorSchedules,
+)
+
+router.get(
+	'/my-schedule',
+	checkAuth(UserRole.DOCTOR),
+	DoctorScheduleController.getMySchedule,
+)
+
+router.delete(
+	'/:id',
+	checkAuth(UserRole.DOCTOR),
+	DoctorScheduleController.deleteDoctorScheduleById,
+)
 
 export const DoctorScheduleRoutes = router

@@ -21,6 +21,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+uploads/*
+!uploads/.gitkeep
+*.log
 
 # caches
 .eslintcache
@@ -38,3 +41,5 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 /src/generated/prisma
 
 /src/generated/prisma
+
+

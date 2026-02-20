@@ -17,7 +17,7 @@ router.post(
 )
 router.get(
 	'/',
-	checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR),
+	// checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR),
 	SpecialtiesController.getAllSpecialties,
 )
 router.delete(

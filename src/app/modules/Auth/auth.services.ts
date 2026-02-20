@@ -80,8 +80,17 @@ const refreshTokenFromDB = async (token: string) => {
 		envVars.JWT.ACCESS_TOKEN_SECRET,
 		envVars.JWT.ACCESS_TOKEN_EXPIRES,
 	)
+	const refreshToken = JWT.generateToken(
+		tokenPayload,
+		envVars.JWT.REFRESH_TOKEN_SECRET,
+		envVars.JWT.REFRESH_TOKEN_EXPIRES,
+	)
 
-	return { accessToken }
+	return {
+		accessToken,
+		refreshToken,
+		needPasswordChange: userData.needPasswordChange,
+	}
 }
 const changePasswordIntoDB = async (
 	oldPassword: string,

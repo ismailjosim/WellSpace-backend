@@ -9,7 +9,8 @@
 		"dev": "pnpm exec tsx watch ./src/server.ts",
 		"dev:node": "pnpm exec ts-node-dev --respawn --transpile-only ./src/server.ts",
 		"build": "tsc",
-		"start": "node dist/server.js",
+		"start": "node ./dist/server.js",
+		"postinstall": "prisma generate --schema=./prisma/schema",
 		"prisma:migrate": "pnpm exec prisma migrate dev",
 		"prisma:generate": "pnpm exec prisma generate"
 	},

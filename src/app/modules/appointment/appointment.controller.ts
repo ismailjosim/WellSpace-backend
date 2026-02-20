@@ -35,7 +35,8 @@ const getMyAppointment = catchAsync(async (req: Request, res: Response) => {
 		statusCode: StatusCode.OK,
 		success: true,
 		message: 'Appointment Retrieved successfully!',
-		data: result,
+		data: result.data,
+		meta: result.meta,
 	})
 })
 const updateAppointmentStatus = catchAsync(

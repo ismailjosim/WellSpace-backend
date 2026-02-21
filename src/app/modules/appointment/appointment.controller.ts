@@ -21,6 +21,25 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 		data: result,
 	})
 })
+
+const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
+	const filters = pick(req.query, appointmentFilterableFields)
+
+	const result = await AppointmentService.getAllAppointmentFromDB(
+		options,
+		filters,
+	)
+
+	sendResponse(res, {
+		statusCode: StatusCode.OK,
+		success: true,
+		message: 'Appointment Retrieved successfully!',
+		data: result.data,
+		meta: result.meta,
+	})
+})
+
 const getMyAppointment = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy'])
 	const filters = pick(req.query, appointmentFilterableFields)
@@ -39,6 +58,7 @@ const getMyAppointment = catchAsync(async (req: Request, res: Response) => {
 		meta: result.meta,
 	})
 })
+
 const updateAppointmentStatus = catchAsync(
 	async (req: Request, res: Response) => {
 		const user = req.user as JwtPayload
@@ -68,8 +88,46 @@ const updateAppointmentStatus = catchAsync(
 	},
 )
 
+const createAppointmentWithPayLater = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user as JwtPayload
+		const payload = req.body
+		const result = await AppointmentService.createAppointmentIntoDB(
+			user,
+			payload,
+		)
+
+		sendResponse(res, {
+			statusCode: StatusCode.OK,
+			success: true,
+			message:
+				'Appointment created successfully! Please remember to complete the payment before your appointment.',
+			data: result,
+		})
+	},
+)
+
+const initiatePayment = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user as JwtPayload
+	const { id } = req.body
+	const result = await AppointmentService.initiatePaymentForAppointment(
+		id,
+		user,
+	)
+
+	sendResponse(res, {
+		statusCode: StatusCode.OK,
+		success: true,
+		message: 'Payment session created successfully',
+		data: result,
+	})
+})
+
 export const AppointmentController = {
 	createAppointment,
+	getAllAppointments,
 	getMyAppointment,
 	updateAppointmentStatus,
+	createAppointmentWithPayLater,
+	initiatePayment,
 }

@@ -13,6 +13,7 @@ import {
 } from '@prisma/client'
 import AppError from '@/helpers/AppError'
 import StatusCode from '@/utils/statusCode'
+import { NotificationService } from '../notification/notification.service'
 
 const createAppointmentIntoDB = async (
 	user: JwtPayload,
@@ -99,10 +100,17 @@ const createAppointmentIntoDB = async (
 			cancel_url: `${envVars.FRONTEND_URL}/payment-failed`,
 		})
 
-		return { paymentUrl: session.url }
+		return {
+			paymentUrl: session.url,
+			appointmentId: appointmentResult.id,
+		}
 	})
 
-	return result
+	await NotificationService.createAppointmentBookedNotifications(
+		result.appointmentId,
+	)
+
+	return { paymentUrl: result.paymentUrl }
 }
 
 const getAllAppointmentFromDB = async (options: IOptions, filters: any) => {
@@ -251,6 +259,8 @@ const updateAppointmentStatusInfoDB = async (
 		data: { status },
 	})
 
+	await NotificationService.createAppointmentStatusNotifications(result.id)
+
 	return result
 }
 
@@ -370,6 +380,8 @@ const createAppointmentWithPayLater = async (
 
 		return appointmentData
 	})
+
+	await NotificationService.createAppointmentBookedNotifications(result.id)
 
 	return result
 }

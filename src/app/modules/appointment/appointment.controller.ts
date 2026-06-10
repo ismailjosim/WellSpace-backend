@@ -92,7 +92,7 @@ const createAppointmentWithPayLater = catchAsync(
 	async (req: Request, res: Response) => {
 		const user = req.user as JwtPayload
 		const payload = req.body
-		const result = await AppointmentService.createAppointmentIntoDB(
+		const result = await AppointmentService.createAppointmentWithPayLater(
 			user,
 			payload,
 		)

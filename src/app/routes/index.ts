@@ -11,6 +11,7 @@ import { AdminRoutes } from '@/modules/Admin/admin.routes'
 import { PrescriptionRoutes } from '../modules/prescription/prescription.route'
 import { ReviewRoutes } from '../modules/review/review.route'
 import { MetaRoutes } from '../modules/meta/meta.route'
+import { NotificationRoutes } from '@/modules/notification/notification.routes'
 const router = Router()
 
 const moduleRoutes = [
@@ -61,6 +62,10 @@ const moduleRoutes = [
 	{
 		path: '/metadata',
 		route: MetaRoutes,
+	},
+	{
+		path: '/notifications',
+		route: NotificationRoutes,
 	},
 ]
 

@@ -1,164 +1,151 @@
-import { prisma } from '@/config/prisma.config'
-import { generateTimeSlots } from '@/utils/generateTimeSlots'
-import { paginationHelper, type IOptions } from '@/utils/paginationHelper'
-import { buildWhereCondition } from '@/utils/prismaFilter'
-import type { Prisma } from '@prisma/client'
-import type { JwtPayload } from 'jsonwebtoken'
+import { prisma } from '@/config/prisma.config';
+import { generateTimeSlots } from '@/utils/generateTimeSlots';
+import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
+import { buildWhereCondition } from '@/utils/prismaFilter';
+import type { Prisma } from '@prisma/client';
+import type { JwtPayload } from 'jsonwebtoken';
 
 const createScheduleIntoDb = async (payload: any) => {
-	const slots = generateTimeSlots(payload)
-	const newSchedules = []
+  const slots = generateTimeSlots(payload);
+  const newSchedules = [];
 
-	for (const slot of slots) {
-		const isSlotExist = await prisma.schedule.findFirst({
-			where: {
-				startDateTime: slot.startDateTime,
-				endDateTime: slot.endDateTime,
-			},
-		})
-		if (!isSlotExist) {
-			const created = await prisma.schedule.create({ data: slot })
-			newSchedules.push(created)
-		}
-	}
+  for (const slot of slots) {
+    const isSlotExist = await prisma.schedule.findFirst({
+      where: {
+        startDateTime: slot.startDateTime,
+        endDateTime: slot.endDateTime,
+      },
+    });
+    if (!isSlotExist) {
+      const created = await prisma.schedule.create({ data: slot });
+      newSchedules.push(created);
+    }
+  }
 
-	return newSchedules
-}
-const getScheduleForDoctorFromDB = async (
-	user: JwtPayload,
-	filters: any,
-	options: IOptions,
-) => {
-	const { page, limit, skip, sortBy, orderBy } =
-		paginationHelper.calcPagination(options)
-	// const { startDateTime, endDateTime } = filters
-	const whereConditions = buildWhereCondition<Prisma.UserWhereInput>(
-		undefined,
-		filters,
-	)
+  return newSchedules;
+};
+const getScheduleForDoctorFromDB = async (user: JwtPayload, filters: any, options: IOptions) => {
+  const { page, limit, skip, sortBy, orderBy } = paginationHelper.calcPagination(options);
+  // const { startDateTime, endDateTime } = filters
+  const whereConditions = buildWhereCondition<Prisma.UserWhereInput>(undefined, filters);
 
-	// * find only those schedule that are available for specific doctor
-	const doctorSchedules = await prisma.doctorSchedule.findMany({
-		where: {
-			doctor: {
-				email: user.email,
-			},
-		},
-		select: {
-			scheduleId: true,
-		},
-	})
-	const doctorScheduleIds = doctorSchedules.map(
-		(schedule) => schedule.scheduleId,
-	)
+  // * find only those schedule that are available for specific doctor
+  const doctorSchedules = await prisma.doctorSchedule.findMany({
+    where: {
+      doctor: {
+        email: user.email,
+      },
+    },
+    select: {
+      scheduleId: true,
+    },
+  });
+  const doctorScheduleIds = doctorSchedules.map((schedule) => schedule.scheduleId);
 
-	const result = await prisma.schedule.findMany({
-		skip,
-		take: limit,
+  const result = await prisma.schedule.findMany({
+    skip,
+    take: limit,
 
-		where: {
-			...whereConditions,
-			id: {
-				notIn: doctorScheduleIds,
-			},
-		},
-		orderBy: {
-			[sortBy]: orderBy,
-		},
-	})
+    where: {
+      ...whereConditions,
+      id: {
+        notIn: doctorScheduleIds,
+      },
+    },
+    orderBy: {
+      [sortBy]: orderBy,
+    },
+  });
 
-	const total = await prisma.schedule.count({
-		where: {
-			...whereConditions,
-			id: {
-				notIn: doctorScheduleIds,
-			},
-		},
-	})
-	return {
-		meta: {
-			page,
-			limit,
-			total,
-		},
-		data: result,
-	}
-}
+  const total = await prisma.schedule.count({
+    where: {
+      ...whereConditions,
+      id: {
+        notIn: doctorScheduleIds,
+      },
+    },
+  });
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
 const getScheduleByIdFromDB = async (id: string) => {
-	return await prisma.schedule.findUnique({
-		where: {
-			id,
-		},
-	})
-}
+  return await prisma.schedule.findUnique({
+    where: {
+      id,
+    },
+  });
+};
 const deleteScheduleFromDB = async (id: string) => {
-	return await prisma.schedule.delete({
-		where: {
-			id,
-		},
-	})
-}
+  return await prisma.schedule.delete({
+    where: {
+      id,
+    },
+  });
+};
 
-const deleteDateRangeScheduleFromDB = async (
-	startDateTime: string,
-	endDateTime: string,
-) => {
-	const whereConditions = {
-		AND: [
-			{
-				startDateTime: {
-					gte: new Date(startDateTime),
-				},
-			},
-			{
-				endDateTime: {
-					lte: new Date(endDateTime),
-				},
-			},
-		],
-	}
+const deleteDateRangeScheduleFromDB = async (startDateTime: string, endDateTime: string) => {
+  const whereConditions = {
+    AND: [
+      {
+        startDateTime: {
+          gte: new Date(startDateTime),
+        },
+      },
+      {
+        endDateTime: {
+          lte: new Date(endDateTime),
+        },
+      },
+    ],
+  };
 
-	// Check if schedules exist in the range
-	const existingSchedules = await prisma.schedule.findMany({
-		where: whereConditions,
-		select: {
-			id: true,
-			startDateTime: true,
-			endDateTime: true,
-		},
-	})
+  // Check if schedules exist in the range
+  const existingSchedules = await prisma.schedule.findMany({
+    where: whereConditions,
+    select: {
+      id: true,
+      startDateTime: true,
+      endDateTime: true,
+    },
+  });
 
-	// Return early if no schedules found
-	if (existingSchedules.length === 0) {
-		return {
-			count: 0,
-			message: 'No schedules found in the specified date range',
-			deletedSchedules: [],
-		}
-	}
+  // Return early if no schedules found
+  if (existingSchedules.length === 0) {
+    return {
+      count: 0,
+      message: 'No schedules found in the specified date range',
+      deletedSchedules: [],
+    };
+  }
 
-	// Delete schedules using deleteMany (not delete)
-	const deletedSchedules = await prisma.schedule.deleteMany({
-		where: whereConditions,
-	})
+  // Delete schedules using deleteMany (not delete)
+  const deletedSchedules = await prisma.schedule.deleteMany({
+    where: whereConditions,
+  });
 
-	return {
-		count: deletedSchedules.count,
-		deletedSchedules: existingSchedules,
-		dateRange: {
-			start: startDateTime,
-			end: endDateTime,
-		},
-	}
-}
+  return {
+    count: deletedSchedules.count,
+    deletedSchedules: existingSchedules,
+    dateRange: {
+      start: startDateTime,
+      end: endDateTime,
+    },
+  };
+};
 
 export const scheduleService = {
-	createScheduleIntoDb,
-	getScheduleForDoctorFromDB,
-	getScheduleByIdFromDB,
-	deleteScheduleFromDB,
-	deleteDateRangeScheduleFromDB,
-}
+  createScheduleIntoDb,
+  getScheduleForDoctorFromDB,
+  getScheduleByIdFromDB,
+  deleteScheduleFromDB,
+  deleteDateRangeScheduleFromDB,
+};
 /*
 ===========================================================
 	console.log({ startTime, endTime, startDate, endDate })

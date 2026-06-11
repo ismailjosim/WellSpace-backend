@@ -1,1 +1,1 @@
-export const notificationFilterableFields = ['isRead', 'type']
+export const notificationFilterableFields = ['isRead', 'type'];

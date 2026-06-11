@@ -6,6 +6,151 @@ import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { doctorSearchableFields } from './doctor.constant';
 import openAIConfig from '../../config/openRouter.config';
+import { envVars } from '@/config/env';
+
+const doctorSuggestionInclude = {
+  doctorSpecialties: {
+    include: { specialties: true },
+  },
+} satisfies Prisma.DoctorInclude;
+
+type DoctorForSuggestion = Prisma.DoctorGetPayload<{
+  include: typeof doctorSuggestionInclude;
+}>;
+
+const symptomSpecialtyKeywords: Record<string, string[]> = {
+  cardiology: [
+    'chest',
+    'heart',
+    'pressure',
+    'palpitation',
+    'palpitations',
+    'bp',
+    'blood pressure',
+    'breath',
+  ],
+  dermatology: ['skin', 'rash', 'itch', 'acne', 'eczema', 'allergy', 'hair', 'nail'],
+  neurology: ['headache', 'migraine', 'seizure', 'dizzy', 'dizziness', 'numb', 'nerve', 'stroke'],
+  orthopedics: ['bone', 'joint', 'back', 'knee', 'shoulder', 'fracture', 'sprain', 'pain'],
+  pediatrics: ['child', 'baby', 'infant', 'kid', 'children', 'pediatric'],
+  gynecology: ['pregnancy', 'period', 'menstrual', 'vaginal', 'uterus', 'ovary'],
+  ent: ['ear', 'nose', 'throat', 'sinus', 'tonsil', 'hearing'],
+  ophthalmology: ['eye', 'vision', 'blurred', 'red eye', 'sight'],
+  gastroenterology: ['stomach', 'abdominal', 'vomit', 'diarrhea', 'constipation', 'acid', 'gastric'],
+  psychiatry: ['anxiety', 'depression', 'sleep', 'panic', 'stress', 'mental'],
+  pulmonology: ['cough', 'asthma', 'lung', 'breathing', 'wheeze', 'shortness of breath'],
+  endocrinology: ['diabetes', 'thyroid', 'hormone', 'sugar'],
+  urology: ['urine', 'kidney', 'bladder', 'prostate', 'urinary'],
+  dentistry: ['tooth', 'teeth', 'gum', 'dental', 'mouth'],
+  medicine: ['fever', 'cold', 'flu', 'weakness', 'infection', 'general'],
+};
+
+const normalizeText = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+
+const getDoctorSearchText = (doctor: DoctorForSuggestion) =>
+  normalizeText(
+    [
+      doctor.name,
+      doctor.designation,
+      doctor.qualification,
+      doctor.currentWorkingPlace,
+      ...doctor.doctorSpecialties.map((item) => item.specialties.title),
+    ].join(' ')
+  );
+
+const scoreDoctorForSymptoms = (doctor: DoctorForSuggestion, symptoms: string) => {
+  const normalizedSymptoms = normalizeText(symptoms);
+  const symptomWords = normalizedSymptoms.split(/\s+/).filter((word) => word.length > 2);
+  const doctorText = getDoctorSearchText(doctor);
+
+  let score = doctor.averageRating * 2 + doctor.experience * 0.4;
+
+  for (const word of symptomWords) {
+    if (doctorText.includes(word)) {
+      score += 3;
+    }
+  }
+
+  for (const [specialty, keywords] of Object.entries(symptomSpecialtyKeywords)) {
+    const hasSymptomKeyword = keywords.some((keyword) => normalizedSymptoms.includes(keyword));
+    const hasDoctorSpecialty = doctorText.includes(specialty);
+
+    if (hasSymptomKeyword && hasDoctorSpecialty) {
+      score += 25;
+    }
+  }
+
+  return score;
+};
+
+const getFallbackDoctorSuggestion = (doctors: DoctorForSuggestion[], symptoms: string) => {
+  const recommendedDoctors = [...doctors]
+    .sort((first, second) => {
+      const scoreDifference =
+        scoreDoctorForSymptoms(second, symptoms) - scoreDoctorForSymptoms(first, symptoms);
+
+      if (scoreDifference !== 0) {
+        return scoreDifference;
+      }
+
+      return second.averageRating - first.averageRating || second.experience - first.experience;
+    })
+    .slice(0, 3);
+
+  const specialtyNames = Array.from(
+    new Set(
+      recommendedDoctors.flatMap((doctor) =>
+        doctor.doctorSpecialties.map((item) => item.specialties.title)
+      )
+    )
+  ).slice(0, 4);
+
+  return {
+    recommendedDoctors,
+    reasoning:
+      specialtyNames.length > 0
+        ? `Matched your symptoms with available doctors in ${specialtyNames.join(', ')}.`
+        : 'Matched your symptoms with the highest rated available doctors.',
+  };
+};
+
+const normalizeRecommendedDoctors = (
+  aiRecommendedDoctors: unknown,
+  doctors: DoctorForSuggestion[],
+  symptoms: string
+) => {
+  if (!Array.isArray(aiRecommendedDoctors)) {
+    return getFallbackDoctorSuggestion(doctors, symptoms).recommendedDoctors;
+  }
+
+  const matchedDoctors = aiRecommendedDoctors
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const doctor = item as { id?: unknown; email?: unknown; name?: unknown };
+
+      return doctors.find((availableDoctor) => {
+        return (
+          (typeof doctor.id === 'string' && availableDoctor.id === doctor.id) ||
+          (typeof doctor.email === 'string' && availableDoctor.email === doctor.email) ||
+          (typeof doctor.name === 'string' &&
+            availableDoctor.name.toLowerCase() === doctor.name.toLowerCase())
+        );
+      });
+    })
+    .filter((doctor): doctor is DoctorForSuggestion => Boolean(doctor));
+
+  if (matchedDoctors.length === 0) {
+    return getFallbackDoctorSuggestion(doctors, symptoms).recommendedDoctors;
+  }
+
+  return Array.from(new Map(matchedDoctors.map((doctor) => [doctor.id, doctor])).values()).slice(
+    0,
+    3
+  );
+};
 
 /*
  * Get all doctors (paginated & filterable)
@@ -288,19 +433,35 @@ const deleteDoctorByIDFromDB = async (id: string) => {
  * Get AI suggested Doctors
  */
 const getAISuggestionFromDB = async (payload: { symptoms: string }) => {
-  if (!payload?.symptoms) {
+  const symptoms = payload?.symptoms?.trim();
+
+  if (!symptoms || symptoms.length < 5) {
     throw new AppError(StatusCode.BAD_REQUEST, 'Symptoms are required!');
   }
 
   // 🩺 1. Fetch all doctors from DB with specialties
   const doctors = await prisma.doctor.findMany({
     where: { isDeleted: false },
-    include: {
-      doctorSpecialties: {
-        include: { specialties: true },
-      },
-    },
+    include: doctorSuggestionInclude,
   });
+
+  if (doctors.length === 0) {
+    return {
+      totalDoctors: 0,
+      recommendedDoctors: [],
+      reasoning: 'No available doctors found at this moment.',
+    };
+  }
+
+  const fallbackSuggestion = getFallbackDoctorSuggestion(doctors, symptoms);
+
+  if (!envVars.OPEN_ROUTER_API_KEY) {
+    return {
+      totalDoctors: doctors.length,
+      ...fallbackSuggestion,
+      reasoning: `${fallbackSuggestion.reasoning} AI provider is not configured, so this recommendation used local matching.`,
+    };
+  }
 
   // 🧠 2. Prepare the AI prompt
   const prompt = `
@@ -309,7 +470,7 @@ You are an AI medical assistant. Based on the given symptoms, suggest the top 3 
 Each doctor includes specialties and experience. Choose only those that are relevant to the symptoms.
 
 ### Symptoms:
-${payload.symptoms}
+${symptoms}
 
 ### Doctor list (JSON):
 ${JSON.stringify(doctors, null, 2)}
@@ -342,7 +503,11 @@ Return your answer **strictly in JSON format**:
     aiSuggestionText = completion?.choices?.[0]?.message?.content?.trim() || '';
   } catch (error: any) {
     console.error('AI Suggestion Error:', error);
-    throw new AppError(StatusCode.INTERNAL_SERVER_ERROR, 'Failed to get AI doctor suggestion!');
+    return {
+      totalDoctors: doctors.length,
+      ...fallbackSuggestion,
+      reasoning: `${fallbackSuggestion.reasoning} AI provider was unavailable, so this recommendation used local matching.`,
+    };
   }
 
   // 🧩 4. Safely parse AI JSON output
@@ -358,8 +523,8 @@ Return your answer **strictly in JSON format**:
   // 🏁 5. Return final response
   return {
     totalDoctors: doctors.length,
-    recommendedDoctors: aiSuggestion?.recommendedDoctors || [],
-    reasoning: aiSuggestion?.reasoning || 'No reasoning provided.',
+    recommendedDoctors: normalizeRecommendedDoctors(aiSuggestion?.recommendedDoctors, doctors, symptoms),
+    reasoning: aiSuggestion?.reasoning || fallbackSuggestion.reasoning,
   };
 };
 

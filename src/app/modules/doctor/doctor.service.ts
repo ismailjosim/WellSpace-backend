@@ -36,7 +36,15 @@ const symptomSpecialtyKeywords: Record<string, string[]> = {
   gynecology: ['pregnancy', 'period', 'menstrual', 'vaginal', 'uterus', 'ovary'],
   ent: ['ear', 'nose', 'throat', 'sinus', 'tonsil', 'hearing'],
   ophthalmology: ['eye', 'vision', 'blurred', 'red eye', 'sight'],
-  gastroenterology: ['stomach', 'abdominal', 'vomit', 'diarrhea', 'constipation', 'acid', 'gastric'],
+  gastroenterology: [
+    'stomach',
+    'abdominal',
+    'vomit',
+    'diarrhea',
+    'constipation',
+    'acid',
+    'gastric',
+  ],
   psychiatry: ['anxiety', 'depression', 'sleep', 'panic', 'stress', 'mental'],
   pulmonology: ['cough', 'asthma', 'lung', 'breathing', 'wheeze', 'shortness of breath'],
   endocrinology: ['diabetes', 'thyroid', 'hormone', 'sugar'],
@@ -523,7 +531,11 @@ Return your answer **strictly in JSON format**:
   // 🏁 5. Return final response
   return {
     totalDoctors: doctors.length,
-    recommendedDoctors: normalizeRecommendedDoctors(aiSuggestion?.recommendedDoctors, doctors, symptoms),
+    recommendedDoctors: normalizeRecommendedDoctors(
+      aiSuggestion?.recommendedDoctors,
+      doctors,
+      symptoms
+    ),
     reasoning: aiSuggestion?.reasoning || fallbackSuggestion.reasoning,
   };
 };

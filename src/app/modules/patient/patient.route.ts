@@ -8,11 +8,7 @@ const router = Router();
 
 router.get('/', checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN), PatientController.getAllPatients);
 router.get('/me/health-record', checkAuth(UserRole.PATIENT), PatientController.getMyHealthRecord);
-router.patch(
-  '/me/health-data',
-  checkAuth(UserRole.PATIENT),
-  PatientController.updateMyHealthData
-);
+router.patch('/me/health-data', checkAuth(UserRole.PATIENT), PatientController.updateMyHealthData);
 router.post(
   '/me/medical-reports',
   checkAuth(UserRole.PATIENT),

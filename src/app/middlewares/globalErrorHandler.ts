@@ -4,7 +4,10 @@ import HttpStatus from 'http-status';
 import { ZodError } from 'zod';
 import AppError from '@/helpers/AppError';
 
+type RequestWithId = Request & { requestId?: string };
+
 const globalErrorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
+  const requestId = (req as RequestWithId).requestId;
   let statusCode: number = Number(HttpStatus.INTERNAL_SERVER_ERROR);
   let message = 'Something went wrong!';
   let errorDetails: any = null;
@@ -57,11 +60,20 @@ const globalErrorHandler = (err: any, req: Request, res: Response, _next: NextFu
     message = err.message || message;
   }
 
-  // Log full error for debugging (safe in dev)
+  if (statusCode >= 500) {
+    console.error('[error]', {
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      message,
+      error: err,
+    });
+  }
 
   res.status(statusCode).json({
     success: false,
     message,
+    requestId,
     error: errorDetails,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });

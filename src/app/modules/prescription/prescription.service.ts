@@ -1,10 +1,5 @@
 import { prisma } from '@/config/prisma.config';
-import {
-  AppointmentStatus,
-  Prisma,
-  UserRole,
-  type Prescription,
-} from '@prisma/client';
+import { AppointmentStatus, Prisma, UserRole, type Prescription } from '@prisma/client';
 import type { JwtPayload } from 'jsonwebtoken';
 import AppError from '../../helpers/AppError';
 import StatusCode from '../../utils/statusCode';

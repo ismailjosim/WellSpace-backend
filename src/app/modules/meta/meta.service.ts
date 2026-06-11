@@ -276,7 +276,9 @@ const getAdminMetaData = async (filters: DashboardAnalyticsFilters) => {
     totalRevenue: totalRevenue._sum.amount || 0,
     periodRevenue: periodRevenue._sum.amount || 0,
     canceledAppointmentRate:
-      appointmentCount > 0 ? Number(((canceledAppointments / appointmentCount) * 100).toFixed(2)) : 0,
+      appointmentCount > 0
+        ? Number(((canceledAppointments / appointmentCount) * 100).toFixed(2))
+        : 0,
     dateRange: {
       startDate,
       endDate,

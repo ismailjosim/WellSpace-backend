@@ -45,6 +45,8 @@ const getAuthCookieOptions = (maxAge: number): CookieOptions => ({
   httpOnly: true,
   sameSite: envVars.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge,
+  path: '/',
+  priority: 'high',
 });
 
 /**

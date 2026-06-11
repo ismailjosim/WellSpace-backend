@@ -6,10 +6,15 @@ import router from '@/routes';
 import { envVars } from '@/config/env';
 import { PaymentController } from './app/modules/payment/payment.controller';
 import cookieParser from 'cookie-parser';
+import securityHeaders from '@/middlewares/securityHeaders';
+import requestLogger from '@/middlewares/requestLogger';
+import { apiLimiter } from '@/middlewares/rateLimiter';
+import { HealthRoutes } from '@/modules/health/health.route';
 // App
 const app: Application = express();
 
 // middleware
+app.set('trust proxy', 1);
 app.post(
   '/webhook',
   express.raw({
@@ -17,12 +22,15 @@ app.post(
   }),
   PaymentController.handleStripeWebhookEvent
 );
+app.use(securityHeaders);
+app.use(requestLogger);
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: envVars.FRONTEND_URL,
     credentials: true,
   })
 );
+app.use(apiLimiter);
 
 // * Parser
 app.use(express.json());
@@ -47,6 +55,7 @@ app.use(
 // })
 
 // Routes
+app.use('/health', HealthRoutes);
 app.use('/api/v1', router);
 
 //* Default route

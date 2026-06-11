@@ -93,7 +93,7 @@ const createAppointmentWithPayLater = catchAsync(async (req: Request, res: Respo
 
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
-  const { id } = req.body;
+  const { id } = req.params;
   const result = await AppointmentService.initiatePaymentForAppointment(id, user);
 
   sendResponse(res, {

@@ -11,7 +11,12 @@ const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const accessToken = req?.headers?.authorization || req?.cookies?.accessToken;
+      let accessToken = req?.headers?.authorization || req?.cookies?.accessToken;
+
+      // Remove "Bearer " prefix if present
+      if (accessToken && accessToken.startsWith('Bearer ')) {
+        accessToken = accessToken.slice(7);
+      }
 
       if (!accessToken) {
         throw new Error('Token not received');

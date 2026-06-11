@@ -141,42 +141,70 @@ const getMyNotificationsFromDB = async (
   options: IOptions,
   filters: Record<string, any>
 ) => {
-  const { page, limit, skip, sortBy, orderBy } = paginationHelper.calcPagination(options);
-  const whereConditions = buildWhereCondition<Prisma.NotificationWhereInput>(
-    notificationFilterableFields as (keyof Prisma.NotificationWhereInput)[],
-    filters
-  );
+  try {
+    console.log('[Notification Service] getMyNotificationsFromDB - START', {
+      userId: user.userId,
+      email: user.email,
+    });
 
-  const finalWhere: Prisma.NotificationWhereInput = {
-    AND: [
-      whereConditions,
-      {
-        recipientId: user.userId,
-      },
-    ],
-  };
+    const { page, limit, skip, sortBy, orderBy } = paginationHelper.calcPagination(options);
+    const whereConditions = buildWhereCondition<Prisma.NotificationWhereInput>(
+      notificationFilterableFields as (keyof Prisma.NotificationWhereInput)[],
+      filters
+    );
 
-  const [data, total, unreadCount] = await Promise.all([
-    prisma.notification.findMany({
-      where: finalWhere,
+    console.log('[Notification Service] Query details', {
       skip,
       take: limit,
-      orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
-    }),
-    prisma.notification.count({ where: finalWhere }),
-    prisma.notification.count({
-      where: {
-        recipientId: user.userId,
-        isRead: false,
-      },
-    }),
-  ]);
+      sortBy,
+      orderBy,
+      whereConditions,
+    });
 
-  return {
-    meta: { page, limit, total },
-    unreadCount,
-    data,
-  };
+    const finalWhere: Prisma.NotificationWhereInput = {
+      AND: [
+        whereConditions,
+        {
+          recipientId: user.userId,
+        },
+      ],
+    };
+
+    const [data, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: finalWhere,
+        skip,
+        take: limit,
+        orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
+      }),
+      prisma.notification.count({ where: finalWhere }),
+      prisma.notification.count({
+        where: {
+          recipientId: user.userId,
+          isRead: false,
+        },
+      }),
+    ]);
+
+    console.log('[Notification Service] getMyNotificationsFromDB - SUCCESS', {
+      dataCount: data.length,
+      total,
+      unreadCount,
+    });
+
+    return {
+      meta: { page, limit, total },
+      unreadCount,
+      data,
+    };
+  } catch (error: any) {
+    console.error('[Notification Service] getMyNotificationsFromDB - ERROR', {
+      error: error.message,
+      code: error.code,
+      meta: error.meta,
+    });
+    throw error;
+  }
 };
 
 const markNotificationAsReadIntoDB = async (user: JwtPayload, notificationId: string) => {

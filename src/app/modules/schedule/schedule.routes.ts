@@ -22,7 +22,7 @@ router.get(
 
 router.get(
   '/:id',
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
+  // No auth required - schedules are public information
   ScheduleController.getScheduleById
 );
 

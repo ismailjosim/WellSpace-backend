@@ -395,6 +395,10 @@ const initiatePaymentForAppointment = async (appointmentId: string, user: JwtPay
     throw new AppError(StatusCode.BAD_REQUEST, 'Appointment not found or unauthorized');
   }
 
+  if (!appointment.payment) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'Payment record not found for this appointment');
+  }
+
   if (appointment.paymentStatus !== PaymentStatus.UNPAID) {
     throw new AppError(StatusCode.BAD_REQUEST, 'Payment already completed for this appointment');
   }
@@ -415,14 +419,14 @@ const initiatePaymentForAppointment = async (appointmentId: string, user: JwtPay
           product_data: {
             name: `Appointment with ${appointment.doctor.name}`,
           },
-          unit_amount: appointment.payment!.amount * 100,
+          unit_amount: appointment.payment.amount * 100,
         },
         quantity: 1,
       },
     ],
     metadata: {
       appointmentId: appointment.id,
-      paymentId: appointment.payment!.id,
+      paymentId: appointment.payment.id,
     },
     success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success`,
     cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/my-appointments`,

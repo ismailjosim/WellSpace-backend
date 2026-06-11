@@ -13,6 +13,12 @@ const getMyNotifications = catchAsync(async (req: Request, res: Response) => {
   const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy']);
   const filters = pick(req.query, notificationFilterableFields);
 
+  console.log('[Notification Controller] getMyNotifications', {
+    userId: user.userId,
+    options,
+    filters,
+  });
+
   const result = await NotificationService.getMyNotificationsFromDB(user, options, filters);
 
   sendResponse(res, {

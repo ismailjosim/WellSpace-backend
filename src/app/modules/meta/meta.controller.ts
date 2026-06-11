@@ -5,7 +5,11 @@ import StatusCode from '@/utils/statusCode';
 import { MetaService } from './meta.service';
 
 const fetchDashboardMetaData = catchAsync(async (req: Request, res: Response) => {
-  const result = await MetaService.fetchDashboardMetaDataFromDB(req.user);
+  const result = await MetaService.fetchDashboardMetaDataFromDB(req.user, {
+    startDate: req.query.startDate as string | undefined,
+    endDate: req.query.endDate as string | undefined,
+    granularity: req.query.granularity as 'day' | 'week' | 'month' | undefined,
+  });
 
   sendResponse(res, {
     statusCode: StatusCode.OK,

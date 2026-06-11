@@ -165,7 +165,27 @@ const getMyAppointmentFromDB = async (options: IOptions, filters: any, user: Jwt
     include:
       user.role === UserRole.DOCTOR
         ? {
-            patient: true,
+            patient: {
+              include: {
+                patientHealthData: true,
+                medicalReport: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 5,
+                },
+                prescriptions: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 5,
+                  include: {
+                    doctor: true,
+                    appointment: {
+                      include: {
+                        schedule: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
             schedule: true,
             prescription: true,
             reviews: true,

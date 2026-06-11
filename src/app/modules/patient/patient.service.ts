@@ -6,6 +6,17 @@ import { patientSearchableFields } from './patient.constants';
 import StatusCode from '@/utils/statusCode';
 import AppError from '@/helpers/AppError';
 import type { JwtPayload } from 'jsonwebtoken';
+import { deleteFromCloudinary } from '@/config/multer.config';
+import type { Request } from 'express';
+
+const getCurrentPatientOrThrow = async (user: JwtPayload) => {
+  return prisma.patient.findUniqueOrThrow({
+    where: {
+      email: user.email,
+      isDeleted: false,
+    },
+  });
+};
 
 /*
  * Get all patients (paginated & filterable)
@@ -45,6 +56,12 @@ const getAllPatientsFromDB = async (filters: any, options: IOptions) => {
 const getPatientByIDFromDB = async (id: string) => {
   const result = await prisma.patient.findUnique({
     where: { id },
+    include: {
+      patientHealthData: true,
+      medicalReport: {
+        orderBy: { createdAt: 'desc' },
+      },
+    },
   });
 
   if (!result || result.isDeleted) {
@@ -52,6 +69,90 @@ const getPatientByIDFromDB = async (id: string) => {
   }
 
   return result;
+};
+
+const getMyHealthRecordFromDB = async (user: JwtPayload) => {
+  const patientInfo = await getCurrentPatientOrThrow(user);
+
+  return prisma.patient.findUnique({
+    where: { id: patientInfo.id },
+    include: {
+      patientHealthData: true,
+      medicalReport: {
+        orderBy: { createdAt: 'desc' },
+      },
+      prescriptions: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          doctor: true,
+          appointment: {
+            include: {
+              schedule: true,
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+const updateMyHealthDataIntoDB = async (user: JwtPayload, payload: any) => {
+  const patientInfo = await getCurrentPatientOrThrow(user);
+
+  return prisma.patientHealthData.upsert({
+    where: { patientId: patientInfo.id },
+    update: payload,
+    create: {
+      ...payload,
+      patientId: patientInfo.id,
+    },
+  });
+};
+
+const createMyMedicalReportIntoDB = async (user: JwtPayload, req: Request) => {
+  const patientInfo = await getCurrentPatientOrThrow(user);
+  const reportName = req.body.reportName;
+  const reportLink = req.file?.path || req.body.reportLink;
+
+  if (!reportName || !reportLink) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'Report name and report file are required');
+  }
+
+  return prisma.medicalReport.create({
+    data: {
+      patientId: patientInfo.id,
+      reportName,
+      reportLink,
+    },
+  });
+};
+
+const deleteMyMedicalReportFromDB = async (user: JwtPayload, reportId: string) => {
+  const patientInfo = await getCurrentPatientOrThrow(user);
+  const report = await prisma.medicalReport.findFirst({
+    where: {
+      id: reportId,
+      patientId: patientInfo.id,
+    },
+  });
+
+  if (!report) {
+    throw new AppError(StatusCode.NOT_FOUND, 'Medical report not found');
+  }
+
+  await prisma.medicalReport.delete({
+    where: { id: report.id },
+  });
+
+  if (report.reportLink) {
+    try {
+      await deleteFromCloudinary(report.reportLink);
+    } catch (error) {
+      console.error('Failed to delete report from Cloudinary:', error);
+    }
+  }
+
+  return report;
 };
 
 /*
@@ -133,6 +234,10 @@ const deletePatientByIDFromDB = async (id: string) => {
 export const PatientService = {
   getAllPatientsFromDB,
   getPatientByIDFromDB,
+  getMyHealthRecordFromDB,
+  updateMyHealthDataIntoDB,
+  createMyMedicalReportIntoDB,
+  deleteMyMedicalReportFromDB,
   updatePatientInfoByIDIntoDB,
   deletePatientByIDFromDB,
 };

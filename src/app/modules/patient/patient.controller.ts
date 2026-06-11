@@ -38,6 +38,53 @@ const getPatientByID = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyHealthRecord = catchAsync(async (req: Request, res: Response) => {
+  const result = await PatientService.getMyHealthRecordFromDB(req.user);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Health record retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateMyHealthData = catchAsync(async (req: Request, res: Response) => {
+  const result = await PatientService.updateMyHealthDataIntoDB(req.user, req.body);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Health data updated successfully!',
+    data: result,
+  });
+});
+
+const createMyMedicalReport = catchAsync(async (req: Request, res: Response) => {
+  const result = await PatientService.createMyMedicalReportIntoDB(req.user, req);
+
+  sendResponse(res, {
+    statusCode: StatusCode.CREATED,
+    success: true,
+    message: 'Medical report uploaded successfully!',
+    data: result,
+  });
+});
+
+const deleteMyMedicalReport = catchAsync(async (req: Request, res: Response) => {
+  const result = await PatientService.deleteMyMedicalReportFromDB(
+    req.user,
+    req.params.reportId as string
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Medical report deleted successfully!',
+    data: result,
+  });
+});
+
 /*
  * Update a patient by ID
  */
@@ -70,6 +117,10 @@ const deletePatientByID = catchAsync(async (req: Request, res: Response) => {
 export const PatientController = {
   getAllPatients,
   getPatientByID,
+  getMyHealthRecord,
+  updateMyHealthData,
+  createMyMedicalReport,
+  deleteMyMedicalReport,
   updatePatientInfoByID,
   deletePatientByID,
 };

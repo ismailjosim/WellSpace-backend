@@ -1,7 +1,5 @@
 {
   "name": "wellspace",
-  "module": "index.ts",
-  "type": "module",
   "scripts": {
     "dev": "pnpm exec tsx watch ./src/server.ts",
     "dev:node": "pnpm exec ts-node-dev --respawn --transpile-only ./src/server.ts",

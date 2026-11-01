@@ -1,3 +1,3 @@
-import HttpStatus from 'http-status'
-const StatusCode = HttpStatus
-export default StatusCode
+import HttpStatus from 'http-status';
+const StatusCode = HttpStatus;
+export default StatusCode;

@@ -1,1 +1,1 @@
-export const prescriptionsFilterableFields = ['createdAt']
+export const prescriptionsFilterableFields = ['createdAt'];

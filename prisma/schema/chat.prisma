@@ -1,0 +1,29 @@
+model ChatRoom {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  messages      Message[]
+
+  @@map("chat_rooms")
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  chatRoomId String
+  chatRoom   ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  senderId   String
+  senderRole UserRole
+  senderName String?
+  content    String
+  attachment String?
+  fileType   String?
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([chatRoomId, createdAt])
+  @@map("messages")
+}
+

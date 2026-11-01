@@ -2,89 +2,106 @@
 
 // section: Prisma Model
 model User {
-    id                 String     @id @default(uuid())
-    email              String     @unique
-    password           String
-    role               UserRole   @default(PATIENT)
-    needPasswordChange Boolean    @default(true)
-    status             UserStatus @default(ACTIVE)
-    createdAt          DateTime   @default(now())
-    updatedAt          DateTime   @updatedAt
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  password           String
+  role               UserRole   @default(PATIENT)
+  needPasswordChange Boolean    @default(true)
+  status             UserStatus @default(ACTIVE)
 
-    // set relation
-    admin   Admin?
-    doctor  Doctor?
-    patient Patient?
+  // MFA / 2FA Security Additions:
+  isMfaEnabled   Boolean  @default(false)
+  mfaSecret      String?
+  mfaBackupCodes String[] @default([])
+  mfaMethod      String?
 
-    // change table name
-    @@map("users")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // set relation
+  admin         Admin?
+  doctor        Doctor?
+  patient       Patient?
+  notifications Notification[]
+
+  // change table name
+  @@map("users")
 }
 
 // section: Admin model
 model Admin {
-    id            String   @id @default(uuid())
-    name          String
-    email         String   @unique
-    profilePhoto  String?
-    contactNumber String
-    isDeleted     Boolean  @default(false)
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-    // set relation
-    user User @relation(fields: [email], references: [email])
+  // set relation
+  user User @relation(fields: [email], references: [email])
 
-    // change table name
-    @@map("admins")
+  // change table name
+  @@map("admins")
 }
 
 model Doctor {
-    id                  String   @id @default(uuid())
-    name                String
-    email               String   @unique
-    profilePhoto        String?
-    contactNumber       String
-    address             String
-    registrationNumber  String
-    experience          Int
-    gender              Gender
-    appointmentFee      Int
-    qualification       String
-    currentWorkingPlace String
-    averageRating       Float    @default(0.0)
-    designation         String
-    isDeleted           Boolean  @default(false)
-    createdAt           DateTime @default(now())
-    updatedAt           DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  profilePhoto        String?
+  contactNumber       String
+  address             String
+  registrationNumber  String
+  experience          Int
+  gender              Gender
+  appointmentFee      Int
+  qualification       String
+  currentWorkingPlace String
+  averageRating       Float    @default(0.0)
+  designation         String
+  isDeleted           Boolean  @default(false)
 
-    user User @relation(fields: [email], references: [email])
+  // Verification Additions:
+  verificationStatus  VerificationStatus @default(PENDING)
+  licenseDocumentUrl  String?
+  degreeDocumentUrl   String?
+  rejectionReason     String?
+  verifiedAt          DateTime?
+  verifiedBy          String?
 
-    doctorSchedules   DoctorSchedule[]
-    doctorSpecialties DoctorSpecialties[]
-    appointments      Appointment[]
-    prescriptions     Prescription[]
-    reviews           Review[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-    @@map("doctors")
+  user User @relation(fields: [email], references: [email])
+
+  doctorSchedules   DoctorSchedule[]
+  doctorSpecialties DoctorSpecialties[]
+  appointments      Appointment[]
+  prescriptions     Prescription[]
+  reviews           Review[]
+
+  @@map("doctors")
 }
 
 model Patient {
-    id            String   @id @default(uuid())
-    name          String
-    email         String   @unique
-    profilePhoto  String?
-    contactNumber String?
-    address       String?
-    isDeleted     Boolean  @default(false)
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
-    user          User     @relation(fields: [email], references: [email])
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String?
+  address       String?
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [email], references: [email])
 
-    appointments      Appointment[]
-    prescriptions     Prescription[]
-    reviews           Review[]
-    patientHealthData PatientHealthData?
-    medicalReport     MedicalReport[]
+  appointments      Appointment[]
+  prescriptions     Prescription[]
+  reviews           Review[]
+  patientHealthData PatientHealthData?
+  medicalReport     MedicalReport[]
 
-    @@map("patients")
+  @@map("patients")
 }

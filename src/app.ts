@@ -1,41 +1,48 @@
-import express, { type Application, type Request, type Response } from 'express'
-import cors from 'cors'
-import globalErrorHandler from '@/middlewares/globalErrorHandler'
-import notFound from '@/middlewares/notFound'
-import router from '@/routes'
-import { envVars } from '@/config/env'
-import { PaymentController } from './app/modules/payment/payment.controller'
-import cookieParser from 'cookie-parser'
-import cron from 'node-cron'
-import { AppointmentService } from './app/modules/appointment/appointment.service'
-import AppError from './app/helpers/AppError'
-import StatusCode from './app/utils/statusCode'
+import express, { type Application, type Request, type Response } from 'express';
+import cors from 'cors';
+import globalErrorHandler from '@/middlewares/globalErrorHandler';
+import notFound from '@/middlewares/notFound';
+import router from '@/routes';
+import { envVars } from '@/config/env';
+import { PaymentController } from './app/modules/payment/payment.controller';
+import cookieParser from 'cookie-parser';
+import securityHeaders from '@/middlewares/securityHeaders';
+import requestLogger from '@/middlewares/requestLogger';
+import { apiLimiter } from '@/middlewares/rateLimiter';
+import { HealthRoutes } from '@/modules/health/health.route';
+import { maintenanceGuard } from '@/middlewares/maintenanceGuard';
 // App
-const app: Application = express()
+const app: Application = express();
 
 // middleware
+app.set('trust proxy', 1);
 app.post(
-	'/webhook',
-	express.raw({
-		type: 'application/json',
-	}),
-	PaymentController.handleStripeWebhookEvent,
-)
+  '/webhook',
+  express.raw({
+    type: 'application/json',
+  }),
+  PaymentController.handleStripeWebhookEvent
+);
+app.use(securityHeaders);
+app.use(requestLogger);
 app.use(
-	cors({
-		origin: 'http://localhost:3000',
-		credentials: true,
-	}),
-)
+  cors({
+    origin: envVars.FRONTEND_URL,
+    credentials: true,
+  })
+);
+app.use(apiLimiter);
 
 // * Parser
-app.use(express.json())
-app.use(cookieParser())
+app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 app.use(
-	express.urlencoded({
-		extended: true,
-	}),
-)
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  })
+);
+app.use(maintenanceGuard);
 
 // TODO: uncomment before deploy
 // cron.schedule('* * * * *', () => {
@@ -51,19 +58,20 @@ app.use(
 // })
 
 // Routes
-app.use('/api/v1', router)
+app.use('/health', HealthRoutes);
+app.use('/api/v1', router);
 
 //* Default route
 app.get('/', async (req: Request, res: Response) => {
-	res.status(201).json({
-		message: 'Server is running..',
-		environment: envVars.NODE_ENV,
-		uptime: process.uptime().toFixed(2) + ' sec',
-		timeStamp: new Date().toISOString(),
-	})
-})
+  res.status(201).json({
+    message: 'Server is running..',
+    environment: envVars.NODE_ENV,
+    uptime: process.uptime().toFixed(2) + ' sec',
+    timeStamp: new Date().toISOString(),
+  });
+});
 
-app.use(globalErrorHandler)
-app.use(notFound)
+app.use(globalErrorHandler);
+app.use(notFound);
 
-export default app
+export default app;

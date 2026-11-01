@@ -1,33 +1,32 @@
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 
-const moduleName = process.argv[2]
+const moduleName = process.argv[2];
 
 if (!moduleName) {
-	console.error('❌ Usage: node createModule.cjs <module-name>')
-	process.exit(1)
+  console.error('❌ Usage: node createModule.cjs <module-name>');
+  process.exit(1);
 }
 
-const baseDir = path.join(__dirname, 'src', 'app', 'modules')
-const moduleDir = path.join(baseDir, moduleName)
+const baseDir = path.join(__dirname, 'src', 'app', 'modules');
+const moduleDir = path.join(baseDir, moduleName);
 
 // Only these 4 files
 const filesToCreate = [
-	`${moduleName}.route.ts`,
-	`${moduleName}.controller.ts`,
-	`${moduleName}.service.ts`,
-	`${moduleName}.validation.ts`,
-]
+  `${moduleName}.route.ts`,
+  `${moduleName}.controller.ts`,
+  `${moduleName}.service.ts`,
+  `${moduleName}.validation.ts`,
+];
 
 const getFileContent = (fileName) => {
-	const modulePrefix = fileName.split('.')[0]
-	const capitalizedModulePrefix =
-		modulePrefix.charAt(0).toUpperCase() + modulePrefix.slice(1)
-	const type = fileName.split('.')[1]
+  const modulePrefix = fileName.split('.')[0];
+  const capitalizedModulePrefix = modulePrefix.charAt(0).toUpperCase() + modulePrefix.slice(1);
+  const type = fileName.split('.')[1];
 
-	switch (type) {
-		case 'controller':
-			return `import { Request, Response } from 'express';
+  switch (type) {
+    case 'controller':
+      return `import { Request, Response } from 'express';
 import catchAsync from '@/shared/catchAsync';
 import sendResponse from '@/shared/sendResponse';
 import StatusCode from '@/utils/statusCode';
@@ -46,10 +45,10 @@ const create${capitalizedModulePrefix} = catchAsync(async (req: Request, res: Re
 
 export const ${capitalizedModulePrefix}Controller = {
 	create${capitalizedModulePrefix},
-};`
+};`;
 
-		case 'service':
-			return `import { prisma } from '@/config/prisma.config';
+    case 'service':
+      return `import { prisma } from '@/config/prisma.config';
 import type { JwtPayload } from 'jsonwebtoken';
 
 const create${capitalizedModulePrefix}IntoDB = async (user: JwtPayload, payload: any) => {
@@ -60,10 +59,10 @@ const create${capitalizedModulePrefix}IntoDB = async (user: JwtPayload, payload:
 
 export const ${capitalizedModulePrefix}Service = {
 	create${capitalizedModulePrefix}IntoDB,
-};`
+};`;
 
-		case 'validation':
-			return `import { z } from 'zod';
+    case 'validation':
+      return `import { z } from 'zod';
 
 const create${capitalizedModulePrefix}ValidationSchema = z.object({
 	body: z.object({
@@ -73,10 +72,10 @@ const create${capitalizedModulePrefix}ValidationSchema = z.object({
 
 export const ${capitalizedModulePrefix}Validation = {
 	create${capitalizedModulePrefix}ValidationSchema,
-};`
+};`;
 
-		case 'route':
-			return `import { Router } from 'express';
+    case 'route':
+      return `import { Router } from 'express';
 import { ${capitalizedModulePrefix}Controller } from './${modulePrefix}.controller';
 import validateRequest from '@/middlewares/validateRequest';
 // import checkAuth from '@/middlewares/checkAuth';
@@ -91,36 +90,34 @@ router.post(
 	${capitalizedModulePrefix}Controller.create${capitalizedModulePrefix}
 );
 
-export const ${capitalizedModulePrefix}Routes = router;`
+export const ${capitalizedModulePrefix}Routes = router;`;
 
-		default:
-			return `// ${fileName} for ${moduleName} module`
-	}
-}
+    default:
+      return `// ${fileName} for ${moduleName} module`;
+  }
+};
 
 // Create module directory
 try {
-	fs.mkdirSync(moduleDir, { recursive: true })
-	console.log(`📁 Directory created: ${moduleDir}`)
+  fs.mkdirSync(moduleDir, { recursive: true });
+  console.log(`📁 Directory created: ${moduleDir}`);
 } catch (err) {
-	console.error(`❌ Error creating directory ${moduleDir}:`, err)
-	process.exit(1)
+  console.error(`❌ Error creating directory ${moduleDir}:`, err);
+  process.exit(1);
 }
 
 // Create files
 filesToCreate.forEach((fileName) => {
-	const filePath = path.join(moduleDir, fileName)
-	const fileContent = getFileContent(fileName)
+  const filePath = path.join(moduleDir, fileName);
+  const fileContent = getFileContent(fileName);
 
-	try {
-		fs.writeFileSync(filePath, fileContent.trim() + '\n')
-		console.log(`✅ File created: ${filePath}`)
-	} catch (err) {
-		console.error(`❌ Error creating file ${filePath}:`, err)
-	}
-})
+  try {
+    fs.writeFileSync(filePath, fileContent.trim() + '\n');
+    console.log(`✅ File created: ${filePath}`);
+  } catch (err) {
+    console.error(`❌ Error creating file ${filePath}:`, err);
+  }
+});
 
-console.log(`\n✨ Module '${moduleName}' setup complete!`)
-console.log(
-	`👉 Don't forget to integrate '${moduleName}.route.ts' into your main Express app.`,
-)
+console.log(`\n✨ Module '${moduleName}' setup complete!`);
+console.log(`👉 Don't forget to integrate '${moduleName}.route.ts' into your main Express app.`);

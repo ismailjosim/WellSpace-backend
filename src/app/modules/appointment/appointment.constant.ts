@@ -1,1 +1,1 @@
-export const appointmentFilterableFields = ['status', 'paymentStatus']
+export const appointmentFilterableFields = ['status', 'paymentStatus'];

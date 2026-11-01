@@ -2,7 +2,7 @@ import { rateLimit } from 'express-rate-limit';
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 600 : 3000, // Balanced rate limit for SPA/dashboard requests
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,

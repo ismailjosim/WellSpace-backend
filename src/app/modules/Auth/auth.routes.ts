@@ -30,12 +30,7 @@ router.post(
   AuthControllers.changePassword
 );
 router.post('/forget-password', authLimiter, AuthControllers.forgetPassword);
-router.post(
-  '/reset-password',
-  authLimiter,
-  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
-  AuthControllers.resetPassword
-);
+router.post('/reset-password', authLimiter, AuthControllers.resetPassword);
 router.get('/me', AuthControllers.getMe);
 
 export const AuthRoutes = router;

@@ -48,7 +48,12 @@ const checkAuth =
       // 	throw new AppError(httpStatus.BAD_REQUEST, 'user is not verified')
       // }
 
-      if (!authRoles.includes(tokenVerification.role)) {
+      const userRole = tokenVerification.role;
+      const hasRoleAccess =
+        authRoles.includes(userRole) ||
+        (userRole === 'SUPER_ADMIN' && authRoles.includes('ADMIN'));
+
+      if (!hasRoleAccess) {
         throw new AppError(StatusCode.FORBIDDEN, 'Access Denied');
       }
 

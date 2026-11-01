@@ -90,21 +90,15 @@ const changePassword = async (req: Request, res: Response) => {
     data: null,
   });
 };
-const forgetPassword = async (req: Request, res: Response) => {
-  const result = await AuthServices.loginIntoDB(req.body);
-  setAuthCookie(res, {
-    accessToken: result.accessToken,
-    refreshToken: result.refreshToken,
-  });
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+  await AuthServices.forgetPasswordIntoDB(req.body);
   sendResponse(res, {
     success: true,
     statusCode: StatusCode.OK,
-    message: 'User logged in successfully',
-    data: {
-      ...result,
-    },
+    message: 'Check your email for password reset instructions',
+    data: null,
   });
-};
+});
 const resetPassword = catchAsync(async (req: Request & { user?: any }, res: Response) => {
   // Extract token from Authorization header (remove "Bearer " prefix)
   const authHeader = req.headers.authorization;

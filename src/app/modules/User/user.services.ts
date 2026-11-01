@@ -300,28 +300,62 @@ const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
     ...bodyData,
   };
 
-  // 6️⃣ Update based on role
+  // 6️⃣ Update based on role with sanitized fields
   switch (existingUser.role) {
     case UserRole.ADMIN:
-      await prisma.admin.update({
+    case UserRole.SUPER_ADMIN: {
+      const allowedAdminFields: Record<string, any> = {};
+      if (updateData.name !== undefined) allowedAdminFields.name = updateData.name;
+      if (updateData.contactNumber !== undefined) allowedAdminFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined) allowedAdminFields.profilePhoto = updateData.profilePhoto;
+
+      await prisma.admin.upsert({
         where: { email: existingUser.email },
-        data: updateData,
+        update: allowedAdminFields,
+        create: {
+          email: existingUser.email,
+          name: allowedAdminFields.name || (existingUser.role === UserRole.SUPER_ADMIN ? 'Super Admin' : 'Admin'),
+          contactNumber: allowedAdminFields.contactNumber || '',
+          profilePhoto: allowedAdminFields.profilePhoto || null,
+        },
       });
       break;
+    }
 
-    case UserRole.DOCTOR:
+    case UserRole.DOCTOR: {
+      const allowedDoctorFields: Record<string, any> = {};
+      if (updateData.name !== undefined) allowedDoctorFields.name = updateData.name;
+      if (updateData.contactNumber !== undefined) allowedDoctorFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined) allowedDoctorFields.profilePhoto = updateData.profilePhoto;
+      if (updateData.address !== undefined) allowedDoctorFields.address = updateData.address;
+      if (updateData.registrationNumber !== undefined) allowedDoctorFields.registrationNumber = updateData.registrationNumber;
+      if (updateData.experience !== undefined) allowedDoctorFields.experience = Number(updateData.experience) || 0;
+      if (updateData.gender !== undefined) allowedDoctorFields.gender = updateData.gender;
+      if (updateData.appointmentFee !== undefined) allowedDoctorFields.appointmentFee = Number(updateData.appointmentFee) || 0;
+      if (updateData.qualification !== undefined) allowedDoctorFields.qualification = updateData.qualification;
+      if (updateData.currentWorkingPlace !== undefined) allowedDoctorFields.currentWorkingPlace = updateData.currentWorkingPlace;
+      if (updateData.designation !== undefined) allowedDoctorFields.designation = updateData.designation;
+
       await prisma.doctor.update({
         where: { email: existingUser.email },
-        data: updateData,
+        data: allowedDoctorFields,
       });
       break;
+    }
 
-    case UserRole.PATIENT:
+    case UserRole.PATIENT: {
+      const allowedPatientFields: Record<string, any> = {};
+      if (updateData.name !== undefined) allowedPatientFields.name = updateData.name;
+      if (updateData.contactNumber !== undefined) allowedPatientFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined) allowedPatientFields.profilePhoto = updateData.profilePhoto;
+      if (updateData.address !== undefined) allowedPatientFields.address = updateData.address;
+
       await prisma.patient.update({
         where: { email: existingUser.email },
-        data: updateData,
+        data: allowedPatientFields,
       });
       break;
+    }
 
     default:
       throw new AppError(StatusCode.FORBIDDEN, 'Invalid user role');

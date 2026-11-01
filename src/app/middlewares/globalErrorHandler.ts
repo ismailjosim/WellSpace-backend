@@ -16,15 +16,25 @@ const globalErrorHandler = (err: any, req: Request, res: Response, _next: NextFu
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002':
-        message = 'Duplicate key error';
+        message = 'A record with this information already exists.';
         statusCode = Number(HttpStatus.CONFLICT);
         break;
       case 'P2003':
-        message = 'Foreign key constraint failed';
+        message = 'Referenced item was not found. Please review the details.';
         statusCode = Number(HttpStatus.BAD_REQUEST);
         break;
+      case 'P2025':
+        message = 'The requested record or resource was not found.';
+        statusCode = Number(HttpStatus.NOT_FOUND);
+        break;
+      case 'P1001':
+      case 'P1002':
+      case 'P1003':
+        message = 'Database service is temporarily unavailable. Please try again shortly.';
+        statusCode = Number(HttpStatus.SERVICE_UNAVAILABLE);
+        break;
       default:
-        message = 'Database request error';
+        message = 'We could not process this request right now. Please try again.';
         statusCode = Number(HttpStatus.BAD_REQUEST);
         break;
     }
@@ -33,7 +43,7 @@ const globalErrorHandler = (err: any, req: Request, res: Response, _next: NextFu
 
   // Prisma Validation
   else if (err instanceof Prisma.PrismaClientValidationError) {
-    message = 'Validation error';
+    message = 'Invalid data provided. Please check your submission.';
     statusCode = Number(HttpStatus.BAD_REQUEST);
     errorDetails = err.message;
   }

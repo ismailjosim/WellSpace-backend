@@ -14,12 +14,15 @@ import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/shared/auditService';
 
 const loginIntoDB = async (payload: Partial<User>) => {
-  const user = await prisma.user.findUniqueOrThrow({
+  const user = await prisma.user.findUnique({
     where: {
       email: payload.email,
-      status: UserStatus.ACTIVE,
     },
   });
+
+  if (!user || user.status !== UserStatus.ACTIVE) {
+    throw new AppError(StatusCode.UNAUTHORIZED, 'Invalid email or password.');
+  }
 
   // Check password
   const isCorrectPass = await passwordManage.checkingPassword(
@@ -28,7 +31,7 @@ const loginIntoDB = async (payload: Partial<User>) => {
   );
 
   if (!isCorrectPass) {
-    throw new Error('Password is incorrect!');
+    throw new AppError(StatusCode.UNAUTHORIZED, 'Invalid email or password.');
   }
 
   // If MFA is enabled, issue temporary MFA token requiring 2FA challenge

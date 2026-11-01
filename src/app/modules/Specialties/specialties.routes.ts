@@ -20,6 +20,13 @@ router.get(
   // checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR),
   SpecialtiesController.getAllSpecialties
 );
+router.patch(
+  '/:id',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  fileUploader.multerUpload.single('file'),
+  validateRequest(SpecialtiesValidation.createSpecialtyValidationSchema.partial()),
+  SpecialtiesController.updateSpecialty
+);
 router.delete(
   '/:id',
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),

@@ -83,8 +83,58 @@ const deleteSpecialtyFromDB = async (id: string) => {
   }
 };
 
+const updateSpecialtyInDB = async (id: string, req: Request) => {
+  const existingSpecialty = await prisma.specialties.findUnique({
+    where: { id },
+  });
+
+  if (!existingSpecialty) {
+    throw new Error('Specialty not found');
+  }
+
+  const newCloudinaryUrl = req.file?.path;
+  const payloadData = req.body || {};
+
+  const updateData: { title?: string; icon?: string } = {};
+  if (payloadData.title) {
+    updateData.title = payloadData.title;
+  }
+  if (newCloudinaryUrl) {
+    updateData.icon = newCloudinaryUrl;
+  }
+
+  try {
+    const result = await prisma.specialties.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // If new icon was uploaded and saved successfully, delete the previous icon from Cloudinary
+    if (newCloudinaryUrl && existingSpecialty.icon && existingSpecialty.icon !== newCloudinaryUrl) {
+      try {
+        await deleteFromCloudinary(existingSpecialty.icon);
+      } catch (cloudErr) {
+        console.error('Failed to delete previous icon from Cloudinary:', cloudErr);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    // If DB update failed, delete the newly uploaded file to avoid orphaned assets
+    if (newCloudinaryUrl) {
+      try {
+        await deleteFromCloudinary(newCloudinaryUrl);
+      } catch (deleteError) {
+        console.error('Failed to delete newly uploaded icon after failure:', deleteError);
+      }
+    }
+    throw error;
+  }
+};
+
 export const SpecialtiesServices = {
   createSpecialtyIntoDB,
   getAllSpecialtiesFromDB,
+  updateSpecialtyInDB,
   deleteSpecialtyFromDB,
 };

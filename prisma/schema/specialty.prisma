@@ -2,6 +2,10 @@ model Specialties {
   id                String              @id @default(uuid())
   title             String
   icon              String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
   doctorSpecialties DoctorSpecialties[]
 
   @@map("specialties")

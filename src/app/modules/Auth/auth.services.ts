@@ -259,6 +259,9 @@ const resetPasswordIntoDB = async (
   });
 };
 const getMeFromDB = async (userSession: any) => {
+  if (!userSession || typeof userSession !== 'string') {
+    throw new AppError(StatusCode.UNAUTHORIZED, 'Authentication token not provided');
+  }
   const decodedData = JWT.verifyToken(userSession, envVars.JWT.ACCESS_TOKEN_SECRET);
   const userData = await prisma.user.findUniqueOrThrow({
     where: {

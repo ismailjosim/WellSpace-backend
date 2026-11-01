@@ -37,14 +37,21 @@ const login = async (req: Request, res: Response) => {
   });
 };
 const getMe = async (req: Request, res: Response) => {
-  const userSession = req.cookies.accessToken;
+  let accessToken = req.cookies?.accessToken || req.headers.authorization;
+  if (accessToken && accessToken.startsWith('Bearer ')) {
+    accessToken = accessToken.slice(7);
+  }
 
-  const result = await AuthServices.getMeFromDB(userSession);
+  if (!accessToken) {
+    throw new AppError(StatusCode.UNAUTHORIZED, 'Authentication token not provided');
+  }
+
+  const result = await AuthServices.getMeFromDB(accessToken);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCode.OK,
-    message: 'User profile retrieved in successfully',
+    message: 'User profile retrieved successfully',
     data: result,
   });
 };

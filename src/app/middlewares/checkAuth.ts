@@ -11,7 +11,10 @@ const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      let accessToken = req?.headers?.authorization || req?.cookies?.accessToken;
+      let accessToken =
+        req?.headers?.authorization ||
+        req?.cookies?.accessToken ||
+        (req?.query?.token as string | undefined);
 
       // Remove "Bearer " prefix if present
       if (accessToken && accessToken.startsWith('Bearer ')) {

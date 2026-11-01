@@ -78,4 +78,23 @@ export const deleteFromCloudinary = async (url: string) => {
 
 export const fileUploader = {
   multerUpload,
+  multiDocUpload: multer({
+    storage: storage,
+    limits: {
+      fileSize: MAX_UPLOAD_SIZE_BYTES,
+      files: 5,
+    },
+    fileFilter: (_req, file, cb) => {
+      if (!allowedMimeTypes.has(file.mimetype)) {
+        cb(
+          new AppError(
+            StatusCode.BAD_REQUEST,
+            'Only JPG, PNG, WEBP, GIF, and PDF files are allowed'
+          )
+        );
+        return;
+      }
+      cb(null, true);
+    },
+  }),
 };

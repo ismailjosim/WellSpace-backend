@@ -13,4 +13,10 @@ export const doctorFilterableFields: string[] = [
   'contactNumber',
   'gender',
   'specialties',
+  'minFee',
+  'maxFee',
+  'minRating',
+  'minExperience',
+  'availableDate',
+  'verificationStatus',
 ];

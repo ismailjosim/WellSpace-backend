@@ -34,7 +34,56 @@ const getMyPrescriptions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSinglePrescription = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const prescription = await PrescriptionService.getSinglePrescriptionFromDB(req.user, id);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Prescription retrieved successfully!',
+    data: prescription,
+  });
+});
+
+const getMyFollowUps = catchAsync(async (req: Request, res: Response) => {
+  const result = await PrescriptionService.getMyFollowUpsFromDB(req.user);
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Patient follow-up care records retrieved successfully!',
+    data: result,
+  });
+});
+
+const getDoctorDueFollowUps = catchAsync(async (req: Request, res: Response) => {
+  const result = await PrescriptionService.getDoctorDueFollowUpsFromDB(req.user);
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Doctor follow-up compliance records retrieved successfully!',
+    data: result,
+  });
+});
+
+const bookFollowUpAppointment = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { scheduleId } = req.body;
+  const result = await PrescriptionService.bookFollowUpAppointmentInDB(req.user, id, scheduleId);
+
+  sendResponse(res, {
+    statusCode: StatusCode.CREATED,
+    success: true,
+    message: 'Follow-up appointment booked successfully!',
+    data: result,
+  });
+});
+
 export const PrescriptionController = {
   createPrescription,
   getMyPrescriptions,
+  getSinglePrescription,
+  getMyFollowUps,
+  getDoctorDueFollowUps,
+  bookFollowUpAppointment,
 };

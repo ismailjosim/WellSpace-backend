@@ -12,6 +12,9 @@ import { PrescriptionRoutes } from '../modules/prescription/prescription.route';
 import { ReviewRoutes } from '../modules/review/review.route';
 import { MetaRoutes } from '../modules/meta/meta.route';
 import { NotificationRoutes } from '@/modules/notification/notification.routes';
+import { ChatRoutes } from '@/modules/chat/chat.routes';
+import { ConsultationRoutes } from '@/modules/consultation/consultation.routes';
+import { SettingsRoutes } from '@/modules/settings/settings.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -66,6 +69,18 @@ const moduleRoutes = [
   {
     path: '/notifications',
     route: NotificationRoutes,
+  },
+  {
+    path: '/chat',
+    route: ChatRoutes,
+  },
+  {
+    path: '/consultation-session',
+    route: ConsultationRoutes,
+  },
+  {
+    path: '/settings',
+    route: SettingsRoutes,
   },
 ];
 

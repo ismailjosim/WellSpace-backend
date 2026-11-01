@@ -8,8 +8,15 @@ model User {
   role               UserRole   @default(PATIENT)
   needPasswordChange Boolean    @default(true)
   status             UserStatus @default(ACTIVE)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+
+  // MFA / 2FA Security Additions:
+  isMfaEnabled   Boolean  @default(false)
+  mfaSecret      String?
+  mfaBackupCodes String[] @default([])
+  mfaMethod      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // set relation
   admin         Admin?
@@ -55,6 +62,15 @@ model Doctor {
   averageRating       Float    @default(0.0)
   designation         String
   isDeleted           Boolean  @default(false)
+
+  // Verification Additions:
+  verificationStatus  VerificationStatus @default(PENDING)
+  licenseDocumentUrl  String?
+  degreeDocumentUrl   String?
+  rejectionReason     String?
+  verifiedAt          DateTime?
+  verifiedBy          String?
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

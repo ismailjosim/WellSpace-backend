@@ -8,6 +8,7 @@ import { buildWhereCondition } from '@/utils/prismaFilter';
 import type { JwtPayload } from 'jsonwebtoken';
 import StatusCode from '../../utils/statusCode';
 import AppError from '../../helpers/AppError';
+import { logAuditEvent } from '@/shared/auditService';
 
 const createPatientIntoDB = async (req: Request) => {
   const hashedPassword: string = await passwordManage.hashingPassword(req.body.password);
@@ -248,6 +249,17 @@ const changeProfileStatusIntoDB = async (user: JwtPayload, id: string, status: U
   const updatedUser = await prisma.user.update({
     where: { id },
     data: { status },
+  });
+
+  await logAuditEvent({
+    userId: user.userId,
+    userEmail: user.email,
+    userRole: user.role,
+    action: 'USER_STATUS_UPDATED',
+    resourceType: 'User',
+    resourceId: id,
+    oldData: { status: existingUser.status },
+    newData: { status },
   });
 
   // Step 5: Return response without password

@@ -7,6 +7,22 @@ import { authLimiter } from '@/middlewares/rateLimiter';
 const router = Router();
 
 router.post('/login', authLimiter, AuthControllers.login);
+router.post('/mfa/challenge', authLimiter, AuthControllers.mfaChallenge);
+router.post(
+  '/mfa/setup',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
+  AuthControllers.mfaSetup
+);
+router.post(
+  '/mfa/verify-setup',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
+  AuthControllers.mfaVerifySetup
+);
+router.post(
+  '/mfa/disable',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
+  AuthControllers.mfaDisable
+);
 router.post('/refresh-token', authLimiter, AuthControllers.refreshToken);
 router.post(
   '/change-password',

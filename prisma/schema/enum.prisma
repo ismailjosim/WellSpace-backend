@@ -51,3 +51,32 @@ enum NotificationType {
   PAYMENT_COMPLETED
   SYSTEM
 }
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum FollowUpStatus {
+  PENDING
+  BOOKED
+  COMPLETED
+  OVERDUE
+}
+
+enum ReminderType {
+  TWENTY_FOUR_HOUR
+  ONE_HOUR
+  FOLLOW_UP_DUE
+  UNPAID_EXPIRATION_WARNING
+}
+
+enum ReminderChannel {
+  EMAIL
+  IN_APP
+  SMS
+  PUSH
+}
+

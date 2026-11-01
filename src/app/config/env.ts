@@ -27,6 +27,8 @@ interface EnvConfig {
     SMTP_PASS: string;
     SMTP_FROM: string;
   };
+  SUPER_ADMIN_EMAIL?: string;
+  SUPER_ADMIN_PASS?: string;
 }
 
 const loadEnvVars = (): EnvConfig => {
@@ -85,6 +87,8 @@ const loadEnvVars = (): EnvConfig => {
       SMTP_PASS: process.env.SMTP_PASS as string,
       SMTP_FROM: process.env.SMTP_FROM as string,
     },
+    SUPER_ADMIN_EMAIL: process.env.SUPER_ADMIN_EMAIL || 'super@wellspace.com',
+    SUPER_ADMIN_PASS: process.env.SUPER_ADMIN_PASS || '123456',
   };
 };
 

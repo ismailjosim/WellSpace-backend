@@ -136,6 +136,85 @@ const createAppointmentStatusNotifications = async (appointmentId: string) => {
   return createManyNotificationsIntoDB(notifications);
 };
 
+const createPaymentCompletedNotifications = async (appointmentId: string) => {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      patient: true,
+      doctor: true,
+      payment: true,
+    },
+  });
+
+  if (!appointment) return [];
+
+  const users = await prisma.user.findMany({
+    where: {
+      email: {
+        in: [appointment.patient.email, appointment.doctor.email],
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+
+  const patientUser = users.find((user) => user.email === appointment.patient.email);
+  const doctorUser = users.find((user) => user.email === appointment.doctor.email);
+  const notifications: NotificationPayload[] = [];
+
+  if (patientUser) {
+    notifications.push({
+      recipientId: patientUser.id,
+      type: NotificationType.PAYMENT_COMPLETED,
+      title: 'Payment successful',
+      message: `Your payment of ৳${appointment.payment?.amount || 0} for appointment with Dr. ${appointment.doctor.name} was successful.`,
+      appointmentId: appointment.id,
+    });
+  }
+
+  if (doctorUser) {
+    notifications.push({
+      recipientId: doctorUser.id,
+      type: NotificationType.PAYMENT_COMPLETED,
+      title: 'Payment received',
+      message: `${appointment.patient.name} has completed payment of ৳${appointment.payment?.amount || 0} for their appointment.`,
+      appointmentId: appointment.id,
+    });
+  }
+
+  return createManyNotificationsIntoDB(notifications);
+};
+
+const createPrescriptionCreatedNotifications = async (prescriptionId: string) => {
+  const prescription = await prisma.prescription.findUnique({
+    where: { id: prescriptionId },
+    include: {
+      patient: true,
+      doctor: true,
+    },
+  });
+
+  if (!prescription) return [];
+
+  const patientUser = await prisma.user.findUnique({
+    where: { email: prescription.patient.email },
+    select: { id: true },
+  });
+
+  if (patientUser) {
+    return createNotificationIntoDB({
+      recipientId: patientUser.id,
+      type: NotificationType.PRESCRIPTION_CREATED,
+      title: 'New prescription issued',
+      message: `Dr. ${prescription.doctor.name} has issued a new prescription for your consultation.`,
+      appointmentId: prescription.appointmentId,
+    });
+  }
+  return null;
+};
+
 const getMyNotificationsFromDB = async (
   user: JwtPayload,
   options: IOptions,
@@ -239,6 +318,8 @@ export const NotificationService = {
   createManyNotificationsIntoDB,
   createAppointmentBookedNotifications,
   createAppointmentStatusNotifications,
+  createPaymentCompletedNotifications,
+  createPrescriptionCreatedNotifications,
   getMyNotificationsFromDB,
   markNotificationAsReadIntoDB,
   markAllNotificationsAsReadIntoDB,

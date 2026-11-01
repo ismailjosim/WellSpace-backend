@@ -7,7 +7,13 @@ import { pick } from '@/utils/prismaFilter';
 import { doctorFilterableFields } from './doctor.constant';
 
 const getAllDoctor = catchAsync(async (req: Request, res: Response) => {
-  const options = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy']);
+  const queryOptions = pick(req.query, ['page', 'limit', 'sortBy', 'orderBy', 'sortOrder']);
+  const options = {
+    page: queryOptions.page as string | undefined,
+    limit: queryOptions.limit as string | undefined,
+    sortBy: queryOptions.sortBy as string | undefined,
+    orderBy: (queryOptions.orderBy || queryOptions.sortOrder) as string | undefined,
+  };
   const filters = pick(req.query, doctorFilterableFields);
   const result = await DoctorService.getAllDoctorFromDB(filters, options);
 
@@ -65,10 +71,50 @@ const getAISuggestion = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const uploadVerificationDocuments = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const licenseDoc = files?.['licenseDocument']?.[0]?.path;
+    const degreeDoc = files?.['degreeDocument']?.[0]?.path;
+
+    const result = await DoctorService.updateDoctorVerificationDocumentsIntoDB(req.user, {
+      licenseDocument: licenseDoc || (req.body.licenseDocumentUrl as string),
+      degreeDocument: degreeDoc || (req.body.degreeDocumentUrl as string),
+    });
+
+    sendResponse(res, {
+      statusCode: StatusCode.OK,
+      success: true,
+      message: 'Medical verification documents submitted successfully. Status is now UNDER_REVIEW.',
+      data: result,
+    });
+  }
+);
+
+const updateVerificationStatus = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const doctorId = req.params.id as string;
+    const result = await DoctorService.updateDoctorVerificationStatusIntoDB(
+      req.user,
+      doctorId,
+      req.body
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCode.OK,
+      success: true,
+      message: `Doctor verification status updated to ${req.body.status}`,
+      data: result,
+    });
+  }
+);
+
 export const DoctorController = {
   getAllDoctor,
   updateProfileInfo,
   getSingleDoctorByID,
   deleteDoctorByID,
   getAISuggestion,
+  uploadVerificationDocuments,
+  updateVerificationStatus,
 };

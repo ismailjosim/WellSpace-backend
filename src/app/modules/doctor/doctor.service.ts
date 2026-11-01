@@ -1,12 +1,14 @@
 import { prisma } from '@/config/prisma.config';
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
 import type { Prisma } from '@prisma/client';
+import type { JwtPayload } from 'jsonwebtoken';
 import type { IDoctorUpdateInput } from './doctor.interface';
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { doctorSearchableFields } from './doctor.constant';
 import openAIConfig from '../../config/openRouter.config';
 import { envVars } from '@/config/env';
+import { logAuditEvent } from '@/shared/auditService';
 
 const doctorSuggestionInclude = {
   doctorSpecialties: {
@@ -166,7 +168,16 @@ const normalizeRecommendedDoctors = (
 const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
   const { page, limit, skip } = paginationHelper.calcPagination(options);
 
-  const { searchTerm, specialties, ...filterData } = filters;
+  const {
+    searchTerm,
+    specialties,
+    minFee,
+    maxFee,
+    minRating,
+    minExperience,
+    availableDate,
+    ...filterData
+  } = filters;
 
   const andConditions: Prisma.DoctorWhereInput[] = [];
 
@@ -199,6 +210,65 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
         },
       },
     });
+  }
+
+  // Fee range filter
+  if (minFee !== undefined || maxFee !== undefined) {
+    const feeFilter: Prisma.IntFilter = {};
+    if (minFee !== undefined && !isNaN(Number(minFee))) {
+      feeFilter.gte = Number(minFee);
+    }
+    if (maxFee !== undefined && !isNaN(Number(maxFee))) {
+      feeFilter.lte = Number(maxFee);
+    }
+    if (Object.keys(feeFilter).length > 0) {
+      andConditions.push({
+        appointmentFee: feeFilter,
+      });
+    }
+  }
+
+  // Minimum rating filter
+  if (minRating !== undefined && !isNaN(Number(minRating))) {
+    andConditions.push({
+      averageRating: {
+        gte: Number(minRating),
+      },
+    });
+  }
+
+  // Minimum experience filter
+  if (minExperience !== undefined && !isNaN(Number(minExperience))) {
+    andConditions.push({
+      experience: {
+        gte: Number(minExperience),
+      },
+    });
+  }
+
+  // Available date filter
+  if (availableDate) {
+    const targetDate = new Date(availableDate);
+    if (!isNaN(targetDate.getTime())) {
+      const startOfDay = new Date(targetDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(targetDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      andConditions.push({
+        doctorSchedules: {
+          some: {
+            isBooked: false,
+            schedule: {
+              startDateTime: {
+                gte: startOfDay,
+                lte: endOfDay,
+              },
+            },
+          },
+        },
+      });
+    }
   }
 
   if (Object.keys(filterData).length > 0) {
@@ -434,6 +504,14 @@ const deleteDoctorByIDFromDB = async (id: string) => {
     data: { isDeleted: true },
   });
 
+  await logAuditEvent({
+    action: 'DOCTOR_DELETED',
+    resourceType: 'Doctor',
+    resourceId: id,
+    oldData: { isDeleted: false, name: existingDoctor.name, email: existingDoctor.email },
+    newData: { isDeleted: true },
+  });
+
   return updatedDoctor;
 };
 
@@ -449,7 +527,10 @@ const getAISuggestionFromDB = async (payload: { symptoms: string }) => {
 
   // 🩺 1. Fetch all doctors from DB with specialties
   const doctors = await prisma.doctor.findMany({
-    where: { isDeleted: false },
+    where: {
+      isDeleted: false,
+      verificationStatus: 'VERIFIED',
+    },
     include: doctorSuggestionInclude,
   });
 
@@ -540,10 +621,88 @@ Return your answer **strictly in JSON format**:
   };
 };
 
+const updateDoctorVerificationDocumentsIntoDB = async (
+  user: JwtPayload,
+  files: { licenseDocument?: string; degreeDocument?: string }
+) => {
+  const doctor = await prisma.doctor.findFirstOrThrow({
+    where: { email: user.email, isDeleted: false },
+  });
+
+  const updateData: Prisma.DoctorUpdateInput = {
+    verificationStatus: 'UNDER_REVIEW',
+  };
+
+  if (files.licenseDocument) {
+    updateData.licenseDocumentUrl = files.licenseDocument;
+  }
+  if (files.degreeDocument) {
+    updateData.degreeDocumentUrl = files.degreeDocument;
+  }
+
+  const updatedDoctor = await prisma.doctor.update({
+    where: { id: doctor.id },
+    data: updateData,
+  });
+
+  await logAuditEvent({
+    userId: user.userId,
+    userEmail: user.email,
+    userRole: user.role,
+    action: 'DOCTOR_VERIFICATION_DOCS_SUBMITTED',
+    resourceType: 'Doctor',
+    resourceId: doctor.id,
+    newData: updateData,
+  });
+
+  return updatedDoctor;
+};
+
+const updateDoctorVerificationStatusIntoDB = async (
+  adminUser: JwtPayload,
+  doctorId: string,
+  payload: { status: 'VERIFIED' | 'REJECTED'; rejectionReason?: string }
+) => {
+  const doctor = await prisma.doctor.findUniqueOrThrow({
+    where: { id: doctorId, isDeleted: false },
+  });
+
+  const isVerified = payload.status === 'VERIFIED';
+  const updatedDoctor = await prisma.doctor.update({
+    where: { id: doctorId },
+    data: {
+      verificationStatus: payload.status,
+      verifiedAt: isVerified ? new Date() : null,
+      verifiedBy: isVerified ? adminUser.userId : null,
+      rejectionReason: isVerified
+        ? null
+        : payload.rejectionReason || 'Credentials could not be verified',
+    },
+  });
+
+  await logAuditEvent({
+    userId: adminUser.userId,
+    userEmail: adminUser.email,
+    userRole: adminUser.role,
+    action: `DOCTOR_VERIFICATION_${payload.status}`,
+    resourceType: 'Doctor',
+    resourceId: doctorId,
+    oldData: { verificationStatus: doctor.verificationStatus },
+    newData: {
+      verificationStatus: payload.status,
+      rejectionReason: payload.rejectionReason,
+    },
+  });
+
+  return updatedDoctor;
+};
+
 export const DoctorService = {
   getAllDoctorFromDB,
   updateProfileInfoIntoDB,
   getSingleDoctorByIDFromDB,
   deleteDoctorByIDFromDB,
   getAISuggestionFromDB,
+  updateDoctorVerificationDocumentsIntoDB,
+  updateDoctorVerificationStatusIntoDB,
 };

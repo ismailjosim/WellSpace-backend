@@ -2,6 +2,8 @@ import { Server } from 'http';
 import app from './app';
 import { envVars } from '@/config/env';
 import { prisma } from '@/config/prisma.config';
+import { initScheduler } from '@/jobs/scheduler';
+import seedSuperAdmin from '@/utils/seedSuperAdmin';
 
 let server: Server;
 
@@ -15,8 +17,11 @@ async function bootstrap() {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
 
+    await seedSuperAdmin();
+
     server = app.listen(envVars.PORT, () => {
       console.log(`🚀 Server is running on PORT: ${envVars.PORT}`);
+      initScheduler();
     });
 
     process.on('unhandledRejection', (error) => {

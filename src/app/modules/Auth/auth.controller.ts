@@ -8,9 +8,24 @@ import catchAsync from '../../shared/catchAsync';
 
 const login = async (req: Request, res: Response) => {
   const result = await AuthServices.loginIntoDB(req.body);
+
+  if ('mfaRequired' in result && result.mfaRequired) {
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCode.OK,
+      message: 'Two-factor authentication required',
+      data: {
+        mfaRequired: true,
+        mfaToken: result.mfaToken,
+        user: result.user,
+      },
+    });
+    return;
+  }
+
   setAuthCookie(res, {
-    accessToken: result.accessToken,
-    refreshToken: result.refreshToken,
+    accessToken: result.accessToken as string,
+    refreshToken: result.refreshToken as string,
   });
   sendResponse(res, {
     success: true,
@@ -100,6 +115,59 @@ const resetPassword = catchAsync(async (req: Request & { user?: any }, res: Resp
   });
 });
 
+const mfaSetup = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+  const result = await AuthServices.mfaSetupIntoDB(req.user);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCode.OK,
+    message: 'MFA setup initiated. Scan QR code or enter secret key.',
+    data: result,
+  });
+});
+
+const mfaVerifySetup = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+  const result = await AuthServices.mfaVerifySetupIntoDB(req.user, req.body.token);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCode.OK,
+    message: result.message,
+    data: null,
+  });
+});
+
+const mfaChallenge = catchAsync(async (req: Request, res: Response) => {
+  const { mfaToken, code, isBackupCode } = req.body;
+  if (!mfaToken || !code) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'MFA token and verification code are required');
+  }
+
+  const result = await AuthServices.mfaChallengeIntoDB(mfaToken, code, isBackupCode);
+
+  setAuthCookie(res, {
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCode.OK,
+    message: 'Two-factor authentication verified successfully',
+    data: {
+      ...result,
+    },
+  });
+});
+
+const mfaDisable = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+  const result = await AuthServices.mfaDisableIntoDB(req.user, req.body.token);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCode.OK,
+    message: result.message,
+    data: null,
+  });
+});
+
 export const AuthControllers = {
   login,
   refreshToken,
@@ -107,4 +175,8 @@ export const AuthControllers = {
   forgetPassword,
   resetPassword,
   getMe,
+  mfaSetup,
+  mfaVerifySetup,
+  mfaChallenge,
+  mfaDisable,
 };

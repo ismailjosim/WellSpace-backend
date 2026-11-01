@@ -9,6 +9,7 @@ import { AppointmentStatus, PaymentStatus, UserRole, type Prisma } from '@prisma
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { NotificationService } from '../notification/notification.service';
+import { logAuditEvent } from '@/shared/auditService';
 
 const createAppointmentIntoDB = async (
   user: JwtPayload,
@@ -91,8 +92,8 @@ const createAppointmentIntoDB = async (
         appointmentId: appointmentResult.id,
         paymentId: paymentData.id,
       },
-      success_url: `${envVars.FRONTEND_URL}/payment-success`,
-      cancel_url: `${envVars.FRONTEND_URL}/payment-failed`,
+      success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}&appointmentId=${appointmentResult.id}`,
+      cancel_url: `${envVars.FRONTEND_URL}/payment/failed?appointmentId=${appointmentResult.id}`,
     });
 
     return {
@@ -249,6 +250,27 @@ const updateAppointmentStatusInfoDB = async (
   const result = await prisma.appointment.update({
     where: { id: appointmentId },
     data: { status },
+  });
+
+  if (status === AppointmentStatus.CANCELED) {
+    await prisma.doctorSchedule.updateMany({
+      where: {
+        doctorId: appointmentData.doctorId,
+        scheduleId: appointmentData.scheduleId,
+      },
+      data: { isBooked: false },
+    });
+  }
+
+  await logAuditEvent({
+    userId: user.userId,
+    userEmail: user.email,
+    userRole: user.role,
+    action: `APPOINTMENT_STATUS_${status}`,
+    resourceType: 'Appointment',
+    resourceId: appointmentId,
+    oldData: { status: appointmentData.status },
+    newData: { status },
   });
 
   await NotificationService.createAppointmentStatusNotifications(result.id);
@@ -428,8 +450,8 @@ const initiatePaymentForAppointment = async (appointmentId: string, user: JwtPay
       appointmentId: appointment.id,
       paymentId: appointment.payment.id,
     },
-    success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success`,
-    cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/my-appointments`,
+    success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}&appointmentId=${appointment.id}`,
+    cancel_url: `${envVars.FRONTEND_URL}/payment/failed?appointmentId=${appointment.id}`,
   });
 
   return { paymentUrl: session.url };

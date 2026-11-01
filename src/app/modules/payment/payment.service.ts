@@ -1,6 +1,7 @@
 import { prisma } from '@/config/prisma.config';
 import { PaymentStatus } from '@prisma/client';
 import type Stripe from 'stripe';
+import { NotificationService } from '../notification/notification.service';
 
 const handleStripeEvent = async (event: Stripe.Event): Promise<void> => {
   switch (event.type) {
@@ -29,6 +30,10 @@ const handleStripeEvent = async (event: Stripe.Event): Promise<void> => {
           paymentGatewayData: JSON.parse(JSON.stringify(session)),
         },
       });
+
+      if (appointmentId && session.payment_status === 'paid') {
+        await NotificationService.createPaymentCompletedNotifications(appointmentId);
+      }
       break;
     }
 

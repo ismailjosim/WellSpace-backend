@@ -13,6 +13,14 @@ const createDoctorScheduleIntoDB = async (user: JwtPayload, payload: { scheduleI
       email: user.email,
     },
   });
+
+  if (doctor.verificationStatus !== 'VERIFIED') {
+    throw new AppError(
+      StatusCode.FORBIDDEN,
+      'Your medical credentials must be verified by administrators before managing schedules.'
+    );
+  }
+
   const doctorScheduleData = payload.scheduleIds.map((scheduleId) => ({
     doctorId: doctor.id,
     scheduleId,

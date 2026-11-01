@@ -10,6 +10,7 @@ import securityHeaders from '@/middlewares/securityHeaders';
 import requestLogger from '@/middlewares/requestLogger';
 import { apiLimiter } from '@/middlewares/rateLimiter';
 import { HealthRoutes } from '@/modules/health/health.route';
+import { maintenanceGuard } from '@/middlewares/maintenanceGuard';
 // App
 const app: Application = express();
 
@@ -40,6 +41,7 @@ app.use(
     extended: true,
   })
 );
+app.use(maintenanceGuard);
 
 // TODO: uncomment before deploy
 // cron.schedule('* * * * *', () => {

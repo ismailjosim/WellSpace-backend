@@ -3,7 +3,7 @@ model Schedule {
   startDateTime   DateTime
   endDateTime     DateTime
   createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  updatedAt       DateTime         @default(now()) @updatedAt
   doctorSchedules DoctorSchedule[]
   appointments    Appointment[]
 
@@ -17,7 +17,7 @@ model DoctorSchedule {
   schedule   Schedule @relation(fields: [scheduleId], references: [id])
   isBooked   Boolean  @default(false)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@id([doctorId, scheduleId]) // unique combine key.
   @@map("doctor_schedules")

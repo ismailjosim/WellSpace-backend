@@ -11,7 +11,7 @@ model Appointment {
   status         AppointmentStatus @default(SCHEDULED)
   paymentStatus  PaymentStatus     @default(UNPAID)
   createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  updatedAt      DateTime          @default(now()) @updatedAt
   payment        Payment?
   prescription   Prescription?
   reviews        Review[]
@@ -31,7 +31,7 @@ model Payment {
   status             PaymentStatus @default(UNPAID)
   paymentGatewayData Json?
   createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  updatedAt          DateTime      @default(now()) @updatedAt
 
   @@map("payments")
 }
@@ -50,7 +50,7 @@ model Prescription {
   followUpStatus        FollowUpStatus? @default(PENDING)
   followUpAppointmentId String?         @unique
   createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  updatedAt             DateTime        @default(now()) @updatedAt
 }
 
 model Review {
@@ -64,7 +64,7 @@ model Review {
   rating        Float
   comment       String?
   createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  updatedAt     DateTime    @default(now()) @updatedAt
 
   @@map("reviews")
 }

@@ -8,7 +8,7 @@ model Notification {
   appointmentId String?
   isRead        Boolean          @default(false)
   createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  updatedAt     DateTime         @default(now()) @updatedAt
 
   @@index([recipientId, isRead, createdAt])
   @@map("notifications")

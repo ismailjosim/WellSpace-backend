@@ -5,7 +5,7 @@ model SystemSetting {
   category    String   @default("GENERAL")
   description String?
   updatedBy   String?
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   createdAt   DateTime @default(now())
 
   @@index([category])

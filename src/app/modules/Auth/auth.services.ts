@@ -277,6 +277,8 @@ const getMeFromDB = async (userSession: any) => {
       role: true,
       needPasswordChange: true,
       status: true,
+      isMfaEnabled: true,
+      mfaMethod: true,
       createdAt: true,
       updatedAt: true,
       admin: {

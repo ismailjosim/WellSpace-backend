@@ -4,13 +4,21 @@ import { deleteFromCloudinary } from '../../config/multer.config';
 import { paginationHelper, type IOptions } from '../../utils/paginationHelper';
 import { buildWhereCondition } from '../../utils/prismaFilter';
 import type { Prisma } from '@prisma/client';
+import AppError from '../../helpers/AppError';
+import StatusCode from '../../utils/statusCode';
 
 const createSpecialtyIntoDB = async (req: Request) => {
   const cloudinaryUrl = req.file?.path;
   const payloadData = req.body;
+
+  if (!cloudinaryUrl) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'Specialty icon image is required');
+  }
+
   const specialtyData = {
-    ...payloadData,
+    title: payloadData.title,
     icon: cloudinaryUrl,
+    updatedAt: new Date(),
   };
 
   try {
@@ -95,7 +103,9 @@ const updateSpecialtyInDB = async (id: string, req: Request) => {
   const newCloudinaryUrl = req.file?.path;
   const payloadData = req.body || {};
 
-  const updateData: { title?: string; icon?: string } = {};
+  const updateData: { title?: string; icon?: string; updatedAt?: Date } = {
+    updatedAt: new Date(),
+  };
   if (payloadData.title) {
     updateData.title = payloadData.title;
   }

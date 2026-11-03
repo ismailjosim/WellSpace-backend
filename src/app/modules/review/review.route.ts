@@ -5,6 +5,7 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 
+router.get('/', ReviewController.getReviews);
 router.post('/', checkAuth(UserRole.PATIENT), ReviewController.createReview);
 
 export const ReviewRoutes = router;

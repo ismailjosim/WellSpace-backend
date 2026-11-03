@@ -2,6 +2,44 @@ import { prisma } from '@/config/prisma.config';
 import type { JwtPayload } from 'jsonwebtoken';
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
+import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
+
+const getReviewsByDoctorFromDB = async (doctorId: string, options: IOptions) => {
+  const { page, limit, skip } = paginationHelper.calcPagination(options);
+  const where = { doctorId };
+
+  const [data, total, ratingSummary] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        patient: {
+          select: {
+            name: true,
+            profilePhoto: true,
+          },
+        },
+      },
+    }),
+    prisma.review.count({ where }),
+    prisma.review.aggregate({
+      where,
+      _avg: { rating: true },
+    }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      averageRating: ratingSummary._avg.rating ?? 0,
+    },
+  };
+};
 
 const createReviewIntoDB = async (
   user: JwtPayload,
@@ -56,5 +94,6 @@ const createReviewIntoDB = async (
 };
 
 export const ReviewService = {
+  getReviewsByDoctorFromDB,
   createReviewIntoDB,
 };

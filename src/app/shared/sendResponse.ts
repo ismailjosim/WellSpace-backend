@@ -8,6 +8,7 @@ export interface IResponse<T> {
     page: number;
     limit: number;
     total: number;
+    averageRating?: number;
   };
   data?: T | null;
 }

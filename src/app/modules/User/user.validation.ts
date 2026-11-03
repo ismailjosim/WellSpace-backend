@@ -14,6 +14,7 @@ const createPatientValidationSchema = z.object({
       })
       .email('Invalid email format'),
     address: z.string().optional(),
+    profilePhoto: z.string().optional(),
   }),
 });
 
@@ -33,8 +34,10 @@ const createAdminValidationSchema = z.object({
     contactNumber: z.string({
       error: 'Contact number is required',
     }),
+    profilePhoto: z.string().optional(),
   }),
 });
+
 const createDoctorValidationSchema = z.object({
   password: z.string().nonempty('Password is required'),
   doctor: z.object({
@@ -58,6 +61,7 @@ const createDoctorValidationSchema = z.object({
     qualification: z.string({ error: 'Qualification is required' }).min(1),
     currentWorkingPlace: z.string({ error: 'Current working place is required' }).min(1),
     designation: z.string({ error: 'Designation is required' }).min(1),
+    specialties: z.array(z.string()).optional(),
   }),
 });
 

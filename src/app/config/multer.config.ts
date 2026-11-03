@@ -8,6 +8,7 @@ import StatusCode from '../utils/statusCode';
 const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 const allowedMimeTypes = new Set([
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
   'image/gif',
@@ -26,13 +27,13 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     public_id: (req, file) => {
-      const rawName = file.originalname
-        .split('.')
-        .slice(0, -1)
-        .join('.')
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9\-]/g, '-');
+      const parts = (file.originalname || 'upload').split('.');
+      const baseName = parts.length > 1 ? parts.slice(0, -1).join('.') : parts[0];
+      const rawName =
+        baseName
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9\-]/g, '-') || 'file';
 
       return `${Math.random().toString(36).substring(2)}-${Date.now()}-${rawName}`;
     },

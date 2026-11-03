@@ -289,16 +289,15 @@ const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
   // 3️⃣ Prepare update data
   let updateData: Record<string, any> = {};
 
-  // 4️⃣ Handle image upload (if exists)
+  // 4️⃣ Merge role-specific body data
+  updateData = {
+    ...bodyData,
+  };
+
+  // 5️⃣ Handle image upload (if exists, takes precedence)
   if (req.file?.path) {
     updateData.profilePhoto = req.file.path;
   }
-
-  // 5️⃣ Merge role-specific body data
-  updateData = {
-    ...updateData,
-    ...bodyData,
-  };
 
   // 6️⃣ Update based on role with sanitized fields
   switch (existingUser.role) {
@@ -306,15 +305,19 @@ const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
     case UserRole.SUPER_ADMIN: {
       const allowedAdminFields: Record<string, any> = {};
       if (updateData.name !== undefined) allowedAdminFields.name = updateData.name;
-      if (updateData.contactNumber !== undefined) allowedAdminFields.contactNumber = updateData.contactNumber;
-      if (updateData.profilePhoto !== undefined) allowedAdminFields.profilePhoto = updateData.profilePhoto;
+      if (updateData.contactNumber !== undefined)
+        allowedAdminFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined)
+        allowedAdminFields.profilePhoto = updateData.profilePhoto;
 
       await prisma.admin.upsert({
         where: { email: existingUser.email },
         update: allowedAdminFields,
         create: {
           email: existingUser.email,
-          name: allowedAdminFields.name || (existingUser.role === UserRole.SUPER_ADMIN ? 'Super Admin' : 'Admin'),
+          name:
+            allowedAdminFields.name ||
+            (existingUser.role === UserRole.SUPER_ADMIN ? 'Super Admin' : 'Admin'),
           contactNumber: allowedAdminFields.contactNumber || '',
           profilePhoto: allowedAdminFields.profilePhoto || null,
         },
@@ -325,16 +328,24 @@ const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
     case UserRole.DOCTOR: {
       const allowedDoctorFields: Record<string, any> = {};
       if (updateData.name !== undefined) allowedDoctorFields.name = updateData.name;
-      if (updateData.contactNumber !== undefined) allowedDoctorFields.contactNumber = updateData.contactNumber;
-      if (updateData.profilePhoto !== undefined) allowedDoctorFields.profilePhoto = updateData.profilePhoto;
+      if (updateData.contactNumber !== undefined)
+        allowedDoctorFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined)
+        allowedDoctorFields.profilePhoto = updateData.profilePhoto;
       if (updateData.address !== undefined) allowedDoctorFields.address = updateData.address;
-      if (updateData.registrationNumber !== undefined) allowedDoctorFields.registrationNumber = updateData.registrationNumber;
-      if (updateData.experience !== undefined) allowedDoctorFields.experience = Number(updateData.experience) || 0;
+      if (updateData.registrationNumber !== undefined)
+        allowedDoctorFields.registrationNumber = updateData.registrationNumber;
+      if (updateData.experience !== undefined)
+        allowedDoctorFields.experience = Number(updateData.experience) || 0;
       if (updateData.gender !== undefined) allowedDoctorFields.gender = updateData.gender;
-      if (updateData.appointmentFee !== undefined) allowedDoctorFields.appointmentFee = Number(updateData.appointmentFee) || 0;
-      if (updateData.qualification !== undefined) allowedDoctorFields.qualification = updateData.qualification;
-      if (updateData.currentWorkingPlace !== undefined) allowedDoctorFields.currentWorkingPlace = updateData.currentWorkingPlace;
-      if (updateData.designation !== undefined) allowedDoctorFields.designation = updateData.designation;
+      if (updateData.appointmentFee !== undefined)
+        allowedDoctorFields.appointmentFee = Number(updateData.appointmentFee) || 0;
+      if (updateData.qualification !== undefined)
+        allowedDoctorFields.qualification = updateData.qualification;
+      if (updateData.currentWorkingPlace !== undefined)
+        allowedDoctorFields.currentWorkingPlace = updateData.currentWorkingPlace;
+      if (updateData.designation !== undefined)
+        allowedDoctorFields.designation = updateData.designation;
 
       await prisma.doctor.update({
         where: { email: existingUser.email },
@@ -346,8 +357,10 @@ const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
     case UserRole.PATIENT: {
       const allowedPatientFields: Record<string, any> = {};
       if (updateData.name !== undefined) allowedPatientFields.name = updateData.name;
-      if (updateData.contactNumber !== undefined) allowedPatientFields.contactNumber = updateData.contactNumber;
-      if (updateData.profilePhoto !== undefined) allowedPatientFields.profilePhoto = updateData.profilePhoto;
+      if (updateData.contactNumber !== undefined)
+        allowedPatientFields.contactNumber = updateData.contactNumber;
+      if (updateData.profilePhoto !== undefined)
+        allowedPatientFields.profilePhoto = updateData.profilePhoto;
       if (updateData.address !== undefined) allowedPatientFields.address = updateData.address;
 
       await prisma.patient.update({

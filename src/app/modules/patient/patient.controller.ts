@@ -89,7 +89,11 @@ const deleteMyMedicalReport = catchAsync(async (req: Request, res: Response) => 
  * Update a patient by ID
  */
 const updatePatientInfoByID = catchAsync(async (req: Request, res: Response) => {
-  const result = await PatientService.updatePatientInfoByIDIntoDB(req.user, req.body);
+  const result = await PatientService.updatePatientInfoByIDIntoDB(
+    req.params.id as string,
+    req.user,
+    req.body
+  );
   console.log({ user: req.user, data: req.body });
 
   sendResponse(res, {

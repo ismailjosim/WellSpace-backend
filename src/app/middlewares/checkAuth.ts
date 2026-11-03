@@ -53,8 +53,7 @@ const checkAuth =
 
       const userRole = tokenVerification.role;
       const hasRoleAccess =
-        authRoles.includes(userRole) ||
-        (userRole === 'SUPER_ADMIN' && authRoles.includes('ADMIN'));
+        authRoles.includes(userRole) || (userRole === 'SUPER_ADMIN' && authRoles.includes('ADMIN'));
 
       if (!hasRoleAccess) {
         throw new AppError(StatusCode.FORBIDDEN, 'Access Denied');

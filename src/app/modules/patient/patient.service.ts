@@ -1,5 +1,5 @@
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
-import type { Prisma } from '@prisma/client';
+import { type Prisma, UserRole } from '@prisma/client';
 import { buildWhereCondition } from '@/utils/prismaFilter';
 import { prisma } from '@/config/prisma.config';
 import { patientSearchableFields } from './patient.constants';
@@ -158,16 +158,30 @@ const deleteMyMedicalReportFromDB = async (user: JwtPayload, reportId: string) =
 /*
  * Update patient info by ID
  */
-const updatePatientInfoByIDIntoDB = async (user: JwtPayload, payload: any) => {
+const updatePatientInfoByIDIntoDB = async (id: string, user: JwtPayload, payload: any) => {
   const { medicalReport, patientHealthData, ...patientData } = payload;
 
-  // 1. Find the patient by email
-  const patientInfo = await prisma.patient.findUniqueOrThrow({
+  // 1. Find the patient by id
+  const patientInfo = await prisma.patient.findUnique({
     where: {
-      email: user.email,
+      id,
       isDeleted: false,
     },
   });
+
+  if (!patientInfo) {
+    throw new AppError(StatusCode.NOT_FOUND, 'Patient not found');
+  }
+
+  // If a PATIENT is updating, make sure they only update their own record
+  if (user?.role === UserRole.PATIENT && patientInfo.email !== user.email) {
+    throw new AppError(StatusCode.FORBIDDEN, 'You are not authorized to update this profile');
+  }
+
+  // Prevent email modification
+  if ('email' in patientData) {
+    delete patientData.email;
+  }
 
   // 2. Run all updates in a single transaction
   return await prisma.$transaction(async (tnx) => {

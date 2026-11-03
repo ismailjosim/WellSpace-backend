@@ -306,6 +306,10 @@ const getAllDoctorFromDB = async (filters: any, options: IOptions) => {
         },
       },
       doctorSchedules: {
+        where: {
+          isBooked: false,
+          schedule: { startDateTime: { gt: new Date() } },
+        },
         include: {
           schedule: true,
         },
@@ -464,6 +468,10 @@ const getSingleDoctorByIDFromDB = async (id: string) => {
         },
       },
       doctorSchedules: {
+        where: {
+          isBooked: false,
+          schedule: { startDateTime: { gt: new Date() } },
+        },
         include: {
           schedule: true,
         },

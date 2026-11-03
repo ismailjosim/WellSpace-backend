@@ -1,4 +1,4 @@
-import HttpStatus from 'http-status';
+import HttpStatus from '../utils/httpStatus';
 import type { NextFunction, Request, Response } from 'express';
 
 const notFound = (req: Request, res: Response, _next: NextFunction) => {

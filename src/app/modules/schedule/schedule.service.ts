@@ -1,33 +1,58 @@
 import { prisma } from '@/config/prisma.config';
 import { generateTimeSlots } from '@/utils/generateTimeSlots';
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
-import { buildWhereCondition } from '@/utils/prismaFilter';
 import type { Prisma } from '@prisma/client';
 import type { JwtPayload } from 'jsonwebtoken';
+import AppError from '@/helpers/AppError';
+import StatusCode from '@/utils/statusCode';
 
 const createScheduleIntoDb = async (payload: any) => {
-  const slots = generateTimeSlots(payload);
-  const newSchedules = [];
+  const now = new Date();
+  const slots = generateTimeSlots(payload).filter((slot) => slot.startDateTime > now);
 
-  for (const slot of slots) {
-    const isSlotExist = await prisma.schedule.findFirst({
-      where: {
-        startDateTime: slot.startDateTime,
-        endDateTime: slot.endDateTime,
-      },
-    });
-    if (!isSlotExist) {
-      const created = await prisma.schedule.create({ data: slot });
-      newSchedules.push(created);
-    }
+  if (slots.length === 0) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'No future schedule slots were generated');
   }
 
-  return newSchedules;
+  const existingSchedules = await prisma.schedule.findMany({
+    where: {
+      OR: slots.map(({ startDateTime, endDateTime }) => ({
+        startDateTime,
+        endDateTime,
+      })),
+    },
+    select: {
+      startDateTime: true,
+      endDateTime: true,
+    },
+  });
+  const existingSlotKeys = new Set(
+    existingSchedules.map(
+      ({ startDateTime, endDateTime }) => `${startDateTime.getTime()}-${endDateTime.getTime()}`
+    )
+  );
+  const newSchedules = slots.filter(
+    ({ startDateTime, endDateTime }) =>
+      !existingSlotKeys.has(`${startDateTime.getTime()}-${endDateTime.getTime()}`)
+  );
+
+  if (newSchedules.length === 0) {
+    return [];
+  }
+
+  await prisma.schedule.createMany({ data: newSchedules });
+  return prisma.schedule.findMany({
+    where: {
+      OR: newSchedules.map(({ startDateTime, endDateTime }) => ({
+        startDateTime,
+        endDateTime,
+      })),
+    },
+    orderBy: { startDateTime: 'asc' },
+  });
 };
 const getScheduleForDoctorFromDB = async (user: JwtPayload, filters: any, options: IOptions) => {
   const { page, limit, skip, sortBy, orderBy } = paginationHelper.calcPagination(options);
-  // const { startDateTime, endDateTime } = filters
-  const whereConditions = buildWhereCondition<Prisma.UserWhereInput>(undefined, filters);
 
   // * find only those schedule that are available for specific doctor
   const doctorSchedules = await prisma.doctorSchedule.findMany({
@@ -41,29 +66,36 @@ const getScheduleForDoctorFromDB = async (user: JwtPayload, filters: any, option
     },
   });
   const doctorScheduleIds = doctorSchedules.map((schedule) => schedule.scheduleId);
+  const scheduleConditions: Prisma.ScheduleWhereInput[] = [
+    { startDateTime: { gt: new Date() } },
+    { id: { notIn: doctorScheduleIds } },
+  ];
+  if (filters.startDateTime) {
+    scheduleConditions.push({
+      startDateTime: { gte: new Date(filters.startDateTime) },
+    });
+  }
+  if (filters.endDateTime) {
+    scheduleConditions.push({
+      endDateTime: { lte: new Date(filters.endDateTime) },
+    });
+  }
+  const whereConditions: Prisma.ScheduleWhereInput = { AND: scheduleConditions };
 
   const result = await prisma.schedule.findMany({
     skip,
     take: limit,
-
-    where: {
-      ...whereConditions,
-      id: {
-        notIn: doctorScheduleIds,
-      },
-    },
-    orderBy: {
-      [sortBy]: orderBy,
-    },
+    where: whereConditions,
+    orderBy:
+      sortBy === 'startDateTime'
+        ? orderBy === 'asc'
+          ? { startDateTime: 'asc' }
+          : { startDateTime: 'desc' }
+        : { startDateTime: 'asc' },
   });
 
   const total = await prisma.schedule.count({
-    where: {
-      ...whereConditions,
-      id: {
-        notIn: doctorScheduleIds,
-      },
-    },
+    where: whereConditions,
   });
   return {
     meta: {

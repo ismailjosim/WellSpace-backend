@@ -1,7 +1,7 @@
 import { envVars } from '../config/env';
 import { JWT } from './jwtToken';
 import { prisma } from '../config/prisma.config';
-import httpStatus from 'http-status';
+import httpStatus from './httpStatus';
 
 import { UserRole } from '@prisma/client';
 import type { JwtPayload } from 'jsonwebtoken';

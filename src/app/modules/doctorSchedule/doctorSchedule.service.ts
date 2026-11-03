@@ -21,12 +21,25 @@ const createDoctorScheduleIntoDB = async (user: JwtPayload, payload: { scheduleI
     );
   }
 
+  const now = new Date();
+  const futureSchedules = await prisma.schedule.findMany({
+    where: {
+      id: { in: payload.scheduleIds },
+      startDateTime: { gt: now },
+    },
+    select: { id: true },
+  });
+  if (futureSchedules.length !== payload.scheduleIds.length) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'Only future schedule slots can be added');
+  }
+
   const doctorScheduleData = payload.scheduleIds.map((scheduleId) => ({
     doctorId: doctor.id,
     scheduleId,
   }));
   const result = await prisma.doctorSchedule.createMany({
     data: doctorScheduleData,
+    skipDuplicates: true,
   });
   return result;
 };
@@ -61,29 +74,20 @@ const getAllDoctorSchedulesFromDB = async (options: IOptions, filters: any) => {
 const getMyScheduleFromDB = async (filters: any, options: IPaginationOptions, user: JwtPayload) => {
   const { page, limit, skip, sortBy, orderBy } = paginationHelper.calcPagination(options);
 
-  // 🔹 Use your utility function
-  const whereConditions = buildWhereCondition<any>(
-    [], // no searchable fields for now
-    filters
-  );
-
-  // 🔹 Always scope to logged-in user (doctor)
+  const isBooked =
+    filters.isBooked === 'true' ? true : filters.isBooked === 'false' ? false : undefined;
   const finalWhere: Prisma.DoctorScheduleWhereInput = {
-    AND: [
-      whereConditions,
-      {
-        doctorId: user.userId,
-      },
-    ],
+    doctor: { email: user.email },
+    ...(isBooked === undefined ? {} : { isBooked }),
   };
 
   const result = await prisma.doctorSchedule.findMany({
-    // where: finalWhere,
+    where: finalWhere,
     skip,
     take: limit,
+    include: { schedule: true },
     orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
   });
-  // console.log({ result })
 
   const total = await prisma.doctorSchedule.count({
     where: finalWhere,

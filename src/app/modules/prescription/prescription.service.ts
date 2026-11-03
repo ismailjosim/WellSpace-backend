@@ -8,7 +8,7 @@ import {
   type Prescription,
 } from '@prisma/client';
 import type { JwtPayload } from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import AppError from '../../helpers/AppError';
 import StatusCode from '../../utils/statusCode';
 import { paginationHelper, type IOptions } from '../../utils/paginationHelper';
@@ -236,8 +236,8 @@ const bookFollowUpAppointmentInDB = async (
     },
   });
 
-  const videoCallingId = uuidv4();
-  const transactionId = uuidv4();
+  const videoCallingId = randomUUID();
+  const transactionId = randomUUID();
 
   const newAppointment = await prisma.$transaction(async (tnx) => {
     const appointment = await tnx.appointment.create({

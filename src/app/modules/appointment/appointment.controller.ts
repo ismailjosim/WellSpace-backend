@@ -8,6 +8,7 @@ import { pick } from '../../utils/prismaFilter';
 import { appointmentFilterableFields } from './appointment.constant';
 import { AppointmentStatus } from '@prisma/client';
 import AppError from '../../helpers/AppError';
+import { PaymentService } from '../payment/payment.service';
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
@@ -104,6 +105,24 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyPayment = catchAsync(async (req: Request, res: Response) => {
+  const sessionId = req.query.sessionId;
+  if (typeof sessionId !== 'string' || !sessionId) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'A Stripe session ID is required');
+  }
+
+  const result = await PaymentService.verifyStripePaymentForPatient(
+    sessionId,
+    req.user as JwtPayload
+  );
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Payment status retrieved successfully',
+    data: result,
+  });
+});
+
 export const AppointmentController = {
   createAppointment,
   getAllAppointments,
@@ -111,4 +130,5 @@ export const AppointmentController = {
   updateAppointmentStatus,
   createAppointmentWithPayLater,
   initiatePayment,
+  verifyPayment,
 };

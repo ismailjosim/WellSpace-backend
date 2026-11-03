@@ -1,6 +1,6 @@
 import { prisma } from '@/config/prisma.config';
 import type { JwtPayload } from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { stripeConfig } from '@/config/stripe.config';
 import { envVars } from '@/config/env';
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
@@ -30,14 +30,18 @@ const createAppointmentIntoDB = async (
     },
   });
 
-  await prisma.doctorSchedule.findFirstOrThrow({
+  const doctorSchedule = await prisma.doctorSchedule.findFirst({
     where: {
       doctorId: payload.doctorId,
       scheduleId: payload.scheduleId,
       isBooked: false,
+      schedule: { startDateTime: { gt: new Date() } },
     },
   });
-  const videoCallingId = uuidv4();
+  if (!doctorSchedule) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'This appointment slot is no longer available');
+  }
+  const videoCallingId = randomUUID();
   // Implement DB logic here
   const appointmentData = {
     patientId: patientData.id,
@@ -63,7 +67,7 @@ const createAppointmentIntoDB = async (
     });
 
     // payment options
-    const transactionId = uuidv4();
+    const transactionId = randomUUID();
     const paymentData = await tnx.payment.create({
       data: {
         appointmentId: appointmentResult.id,
@@ -340,15 +344,19 @@ const createAppointmentWithPayLater = async (user: JwtPayload, payload: any) => 
     },
   });
 
-  await prisma.doctorSchedule.findFirstOrThrow({
+  const doctorSchedule = await prisma.doctorSchedule.findFirst({
     where: {
       doctorId: doctorData.id,
       scheduleId: payload.scheduleId,
       isBooked: false,
+      schedule: { startDateTime: { gt: new Date() } },
     },
   });
+  if (!doctorSchedule) {
+    throw new AppError(StatusCode.BAD_REQUEST, 'This appointment slot is no longer available');
+  }
 
-  const videoCallingId = uuidv4();
+  const videoCallingId = randomUUID();
 
   const result = await prisma.$transaction(async (tnx) => {
     const appointmentData = await tnx.appointment.create({
@@ -377,7 +385,7 @@ const createAppointmentWithPayLater = async (user: JwtPayload, payload: any) => 
       },
     });
 
-    const transactionId = uuidv4();
+    const transactionId = randomUUID();
 
     await tnx.payment.create({
       data: {

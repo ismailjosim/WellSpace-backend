@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { NextFunction, Request, Response } from 'express';
-import HttpStatus from 'http-status';
+import HttpStatus from '@/utils/httpStatus';
 import { ZodError } from 'zod';
 import AppError from '@/helpers/AppError';
 

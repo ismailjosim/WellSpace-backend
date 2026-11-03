@@ -1,4 +1,4 @@
-import HttpStatus from 'http-status';
+import HttpStatus from '@/utils/httpStatus';
 import type { Request, Response } from 'express';
 import { UserServices } from './user.services';
 import catchAsync from '@/shared/catchAsync';

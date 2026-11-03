@@ -20,6 +20,8 @@ router.get(
   AppointmentController.getMyAppointment
 );
 
+router.get('/payment-status', checkAuth(UserRole.PATIENT), AppointmentController.verifyPayment);
+
 router.post('/', checkAuth(UserRole.PATIENT), AppointmentController.createAppointment);
 
 router.post(

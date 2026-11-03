@@ -61,7 +61,7 @@ const createDoctorValidationSchema = z.object({
     qualification: z.string({ error: 'Qualification is required' }).min(1),
     currentWorkingPlace: z.string({ error: 'Current working place is required' }).min(1),
     designation: z.string({ error: 'Designation is required' }).min(1),
-    specialties: z.array(z.string()).optional(),
+    specialties: z.array(z.string()).min(1, 'At least one specialty is required'),
   }),
 });
 

@@ -19,6 +19,10 @@ model Appointment {
   consultationSession ConsultationSession?
   reminderLogs   ReminderLog[]
 
+  @@index([patientId, createdAt])
+  @@index([doctorId, status])
+  @@index([status, paymentStatus])
+  @@index([scheduleId])
   @@map("appointments")
 }
 
@@ -51,6 +55,11 @@ model Prescription {
   followUpAppointmentId String?         @unique
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @default(now()) @updatedAt
+
+  @@index([patientId, createdAt])
+  @@index([doctorId, createdAt])
+  @@index([followUpDate, followUpStatus])
+  @@map("prescriptions")
 }
 
 model Review {
@@ -66,5 +75,7 @@ model Review {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @default(now()) @updatedAt
 
+  @@index([doctorId, rating])
+  @@index([patientId])
   @@map("reviews")
 }

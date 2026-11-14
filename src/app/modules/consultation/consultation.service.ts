@@ -3,6 +3,17 @@ import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import type { JwtPayload } from 'jsonwebtoken';
 import { UserRole, CallStatus, AppointmentStatus } from '@prisma/client';
+import { NotificationStream } from '../notification/notification.stream';
+
+export interface IWebRTCSignal {
+  senderId: string;
+  senderRole: string;
+  type: string;
+  payload: any;
+  timestamp: number;
+}
+
+const roomSignals = new Map<string, IWebRTCSignal[]>();
 
 const verifyConsultationAccess = async (appointmentId: string, user: JwtPayload) => {
   const appointment = await prisma.appointment.findUnique({
@@ -147,6 +158,8 @@ const endSession = async (appointmentId: string, user: JwtPayload, notes?: strin
     data: { status: AppointmentStatus.COMPLETED },
   });
 
+  roomSignals.delete(appointmentId);
+
   return updatedSession;
 };
 
@@ -164,8 +177,61 @@ const saveNotes = async (appointmentId: string, user: JwtPayload, notes: string)
   });
 };
 
+const sendSignal = async (
+  appointmentId: string,
+  user: JwtPayload,
+  signalData: { type: string; payload: any }
+) => {
+  const appointment = await verifyConsultationAccess(appointmentId, user);
+
+  if (!roomSignals.has(appointmentId)) {
+    roomSignals.set(appointmentId, []);
+  }
+
+  const signals = roomSignals.get(appointmentId)!;
+  const newSignal: IWebRTCSignal = {
+    senderId: user.userId,
+    senderRole: user.role,
+    type: signalData.type,
+    payload: signalData.payload,
+    timestamp: Date.now(),
+  };
+
+  signals.push(newSignal);
+  if (signals.length > 50) {
+    signals.shift();
+  }
+
+  const recipientEmail =
+    user.role === UserRole.DOCTOR ? appointment.patient.email : appointment.doctor.email;
+  const recipientUser = await prisma.user.findUnique({
+    where: { email: recipientEmail },
+    select: { id: true },
+  });
+
+  if (recipientUser) {
+    NotificationStream.sendToUser(recipientUser.id, 'webrtc_signal', {
+      appointmentId,
+      signal: newSignal,
+    });
+  }
+
+  return { sent: true };
+};
+
+const getSignals = async (appointmentId: string, user: JwtPayload, since?: number) => {
+  await verifyConsultationAccess(appointmentId, user);
+
+  const signals = roomSignals.get(appointmentId) || [];
+  const sinceTime = since ? Number(since) : 0;
+
+  return signals.filter((s) => s.senderId !== user.userId && s.timestamp > sinceTime);
+};
+
 export const ConsultationService = {
   getOrCreateSession,
   endSession,
   saveNotes,
+  sendSignal,
+  getSignals,
 };

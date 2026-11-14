@@ -6,6 +6,7 @@ import type { JwtPayload } from 'jsonwebtoken';
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { UserStatus } from '@prisma/client';
+import { TokenBlacklist } from '@/utils/tokenBlacklist';
 
 const checkAuth =
   (...authRoles: string[]) =>
@@ -23,6 +24,10 @@ const checkAuth =
 
       if (!accessToken) {
         throw new Error('Token not received');
+      }
+
+      if (TokenBlacklist.isRevoked(accessToken)) {
+        throw new AppError(StatusCode.UNAUTHORIZED, 'Token has been revoked');
       }
       const tokenVerification = JWT.verifyToken(
         accessToken,

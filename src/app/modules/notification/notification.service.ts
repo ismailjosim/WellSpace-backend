@@ -313,6 +313,62 @@ const markAllNotificationsAsReadIntoDB = async (user: JwtPayload) => {
   return { message: 'All notifications marked as read' };
 };
 
+const getSingleNotificationFromDB = async (user: JwtPayload, notificationId: string) => {
+  const notification = await prisma.notification.findUnique({
+    where: { id: notificationId },
+  });
+
+  if (!notification || notification.recipientId !== user.userId) {
+    throw new AppError(StatusCode.NOT_FOUND, 'Notification not found');
+  }
+
+  // Mark as read if not already read
+  if (!notification.isRead) {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true },
+    });
+    notification.isRead = true;
+  }
+
+  let appointmentDetails = null;
+  if (notification.appointmentId) {
+    appointmentDetails = await prisma.appointment.findUnique({
+      where: { id: notification.appointmentId },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            designation: true,
+            profilePhoto: true,
+            appointmentFee: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: true,
+          },
+        },
+        schedule: {
+          select: {
+            id: true,
+            startDateTime: true,
+            endDateTime: true,
+          },
+        },
+      },
+    });
+  }
+
+  return {
+    ...notification,
+    appointment: appointmentDetails,
+  };
+};
+
 export const NotificationService = {
   createNotificationIntoDB,
   createManyNotificationsIntoDB,
@@ -321,6 +377,7 @@ export const NotificationService = {
   createPaymentCompletedNotifications,
   createPrescriptionCreatedNotifications,
   getMyNotificationsFromDB,
+  getSingleNotificationFromDB,
   markNotificationAsReadIntoDB,
   markAllNotificationsAsReadIntoDB,
 };

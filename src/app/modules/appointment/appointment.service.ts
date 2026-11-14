@@ -465,9 +465,47 @@ const initiatePaymentForAppointment = async (appointmentId: string, user: JwtPay
   return { paymentUrl: session.url };
 };
 
+const getAppointmentByIdFromDB = async (user: JwtPayload, appointmentId: string) => {
+  const appointment = await prisma.appointment.findUniqueOrThrow({
+    where: { id: appointmentId },
+    include: {
+      doctor: {
+        include: {
+          doctorSpecialties: {
+            include: {
+              specialties: true,
+            },
+          },
+        },
+      },
+      patient: {
+        include: {
+          medicalReport: true,
+          patientHealthData: true,
+        },
+      },
+      schedule: true,
+      payment: true,
+      prescription: true,
+      reviews: true,
+    },
+  });
+
+  // Authorization check: Patient, Doctor, or Admin
+  if (user.role === UserRole.PATIENT && appointment.patient.email !== user.email) {
+    throw new AppError(StatusCode.FORBIDDEN, 'You are not authorized to view this appointment');
+  }
+  if (user.role === UserRole.DOCTOR && appointment.doctor.email !== user.email) {
+    throw new AppError(StatusCode.FORBIDDEN, 'You are not authorized to view this appointment');
+  }
+
+  return appointment;
+};
+
 export const AppointmentService = {
   createAppointmentIntoDB,
   getMyAppointmentFromDB,
+  getAppointmentByIdFromDB,
   updateAppointmentStatusInfoDB,
   cancelUnpaidAppointments,
   getAllAppointmentFromDB,

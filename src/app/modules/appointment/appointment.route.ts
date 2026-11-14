@@ -22,6 +22,12 @@ router.get(
 
 router.get('/payment-status', checkAuth(UserRole.PATIENT), AppointmentController.verifyPayment);
 
+router.get(
+  '/:id',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
+  AppointmentController.getAppointmentById
+);
+
 router.post('/', checkAuth(UserRole.PATIENT), AppointmentController.createAppointment);
 
 router.post(

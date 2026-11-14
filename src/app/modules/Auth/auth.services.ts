@@ -3,6 +3,7 @@ import { prisma } from '@/config/prisma.config';
 import { passwordManage } from '@/utils/passwordManage';
 import { JWT } from '@/utils/jwtToken';
 import { envVars } from '@/config/env';
+import { TokenBlacklist } from '@/utils/tokenBlacklist';
 import AppError from '../../helpers/AppError';
 import StatusCode from '../../utils/statusCode';
 import { AuthMfaServices } from './auth.mfa.services';
@@ -79,12 +80,19 @@ const loginIntoDB = async (payload: Partial<User>) => {
 };
 
 const refreshTokenFromDB = async (token: string) => {
+  if (TokenBlacklist.isRevoked(token)) {
+    throw new AppError(StatusCode.UNAUTHORIZED, 'Refresh token has been revoked');
+  }
+
   let decodedData;
   try {
     decodedData = JWT.verifyToken(token, envVars.JWT.REFRESH_TOKEN_SECRET);
   } catch {
     throw new AppError(StatusCode.BAD_REQUEST, 'You are not authorized');
   }
+
+  // Revoke the old refresh token (token rotation)
+  TokenBlacklist.revoke(token, 30 * 24 * 60 * 60 * 1000);
 
   const userData = await prisma.user.findUniqueOrThrow({
     where: {

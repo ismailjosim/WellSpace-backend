@@ -81,12 +81,19 @@ const getMyScheduleFromDB = async (filters: any, options: IPaginationOptions, us
     ...(isBooked === undefined ? {} : { isBooked }),
   };
 
+  const sortClause =
+    sortBy === 'schedule.startDateTime'
+      ? { schedule: { startDateTime: orderBy || 'asc' } }
+      : sortBy && orderBy
+        ? { [sortBy]: orderBy }
+        : { createdAt: 'desc' };
+
   const result = await prisma.doctorSchedule.findMany({
     where: finalWhere,
     skip,
     take: limit,
     include: { schedule: true },
-    orderBy: sortBy && orderBy ? { [sortBy]: orderBy } : { createdAt: 'desc' },
+    orderBy: sortClause as any,
   });
 
   const total = await prisma.doctorSchedule.count({

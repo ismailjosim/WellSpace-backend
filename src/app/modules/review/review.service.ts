@@ -3,6 +3,7 @@ import type { JwtPayload } from 'jsonwebtoken';
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { paginationHelper, type IOptions } from '@/utils/paginationHelper';
+import { AppointmentStatus } from '@prisma/client';
 
 const getReviewsByDoctorFromDB = async (doctorId: string, options: IOptions) => {
   const { page, limit, skip } = paginationHelper.calcPagination(options);
@@ -59,6 +60,23 @@ const createReviewIntoDB = async (
 
   if (patientData.id !== appointmentData.patientId) {
     throw new AppError(StatusCode.BAD_REQUEST, 'This is not your appointment');
+  }
+
+  if (appointmentData.status !== AppointmentStatus.COMPLETED) {
+    throw new AppError(
+      StatusCode.BAD_REQUEST,
+      'You can only review consultations after they have been completed by your doctor'
+    );
+  }
+
+  const existingReview = await prisma.review.findUnique({
+    where: { appointmentId: appointmentData.id },
+  });
+  if (existingReview) {
+    throw new AppError(
+      StatusCode.BAD_REQUEST,
+      'You have already submitted a review for this appointment'
+    );
   }
 
   return await prisma.$transaction(async (tnx) => {

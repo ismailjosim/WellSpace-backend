@@ -42,8 +42,35 @@ const saveNotes = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendSignal = catchAsync(async (req: Request, res: Response) => {
+  const { appointmentId } = req.params;
+  const result = await ConsultationService.sendSignal(appointmentId, req.user, req.body);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'WebRTC signal relayed successfully',
+    data: result,
+  });
+});
+
+const getSignals = catchAsync(async (req: Request, res: Response) => {
+  const { appointmentId } = req.params;
+  const since = req.query.since ? Number(req.query.since) : undefined;
+  const result = await ConsultationService.getSignals(appointmentId, req.user, since);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'WebRTC signals retrieved',
+    data: result,
+  });
+});
+
 export const ConsultationController = {
   getSession,
   endSession,
   saveNotes,
+  sendSignal,
+  getSignals,
 };

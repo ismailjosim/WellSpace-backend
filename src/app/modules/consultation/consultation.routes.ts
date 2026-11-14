@@ -23,4 +23,16 @@ router.patch(
   ConsultationController.saveNotes
 );
 
+router.post(
+  '/:appointmentId/signal',
+  checkAuth(UserRole.PATIENT, UserRole.DOCTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  ConsultationController.sendSignal
+);
+
+router.get(
+  '/:appointmentId/signals',
+  checkAuth(UserRole.PATIENT, UserRole.DOCTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  ConsultationController.getSignals
+);
+
 export const ConsultationRoutes = router;

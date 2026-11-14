@@ -17,6 +17,12 @@ router.get(
   NotificationController.streamMyNotifications
 );
 
+router.get(
+  '/:id',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
+  NotificationController.getSingleNotification
+);
+
 router.patch(
   '/read-all',
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DOCTOR, UserRole.PATIENT),

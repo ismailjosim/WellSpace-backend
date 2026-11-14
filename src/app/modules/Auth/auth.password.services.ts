@@ -49,31 +49,48 @@ const changePasswordIntoDB = async (oldPassword: string, newPassword: string, us
 };
 
 const forgetPasswordIntoDB = async (payload: { email: string }) => {
-  const userData = await prisma.user.findUniqueOrThrow({
+  const userData = await prisma.user.findUnique({
     where: {
       email: payload.email,
       status: UserStatus.ACTIVE,
     },
   });
+
+  if (!userData) {
+    // Return early without error to prevent user email enumeration
+    console.info(
+      `[Auth Notice] Password reset requested for unverified/non-existent email: ${payload.email}`
+    );
+    return null;
+  }
+
   const tokenPayload = {
     userId: userData.id,
     email: userData.email,
     role: userData.role,
   };
 
-  const resetPasswordToken = JWT.generateToken(tokenPayload, envVars.JWT.ACCESS_TOKEN_SECRET, '5m');
+  const resetPasswordToken = JWT.generateToken(
+    tokenPayload,
+    envVars.JWT.ACCESS_TOKEN_SECRET,
+    '15m'
+  );
 
   const resetUILink = `${envVars.FRONTEND_URL}/reset-password?id=${userData.id}&token=${resetPasswordToken}`;
 
-  sendMail({
-    to: userData.email,
-    subject: 'Password Reset',
-    templateName: 'forgetPassword',
-    templateData: {
-      name: 'User',
-      resetUILink,
-    },
-  });
+  try {
+    sendMail({
+      to: userData.email,
+      subject: 'Password Reset',
+      templateName: 'forgetPassword',
+      templateData: {
+        name: 'User',
+        resetUILink,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth Error] Failed to send password reset email:', error);
+  }
 
   return null;
 };

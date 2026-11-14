@@ -63,8 +63,22 @@ const streamMyNotifications = catchAsync(async (req: Request, res: Response) => 
   NotificationStream.addClient(user.userId, res);
 });
 
+const getSingleNotification = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as JwtPayload;
+  const { id } = req.params;
+  const result = await NotificationService.getSingleNotificationFromDB(user, id);
+
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Notification details retrieved successfully',
+    data: result,
+  });
+});
+
 export const NotificationController = {
   getMyNotifications,
+  getSingleNotification,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   streamMyNotifications,

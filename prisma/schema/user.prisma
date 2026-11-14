@@ -82,6 +82,9 @@ model Doctor {
   prescriptions     Prescription[]
   reviews           Review[]
 
+  @@index([averageRating])
+  @@index([isDeleted])
+  @@index([verificationStatus])
   @@map("doctors")
 }
 
@@ -103,5 +106,6 @@ model Patient {
   patientHealthData PatientHealthData?
   medicalReport     MedicalReport[]
 
+  @@index([isDeleted])
   @@map("patients")
 }

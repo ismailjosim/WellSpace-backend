@@ -123,10 +123,24 @@ const verifyPayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAppointmentById = catchAsync(async (req: Request, res: Response) => {
+  const result = await AppointmentService.getAppointmentByIdFromDB(
+    req.user as JwtPayload,
+    req.params.id as string
+  );
+  sendResponse(res, {
+    statusCode: StatusCode.OK,
+    success: true,
+    message: 'Appointment retrieved successfully',
+    data: result,
+  });
+});
+
 export const AppointmentController = {
   createAppointment,
   getAllAppointments,
   getMyAppointment,
+  getAppointmentById,
   updateAppointmentStatus,
   createAppointmentWithPayLater,
   initiatePayment,

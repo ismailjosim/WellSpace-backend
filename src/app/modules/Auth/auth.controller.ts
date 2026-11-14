@@ -3,6 +3,7 @@ import StatusCode from '@/utils/statusCode';
 import sendResponse from '@/shared/sendResponse';
 import { AuthServices } from './auth.services';
 import { setAuthCookie } from '@/utils/setAuthCookie';
+import { TokenBlacklist } from '@/utils/tokenBlacklist';
 import AppError from '@/helpers/AppError';
 import catchAsync from '../../shared/catchAsync';
 
@@ -169,8 +170,29 @@ const mfaDisable = catchAsync(async (req: Request & { user?: any }, res: Respons
   });
 });
 
+const logout = catchAsync(async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const accessToken =
+    req.cookies?.accessToken || (authHeader ? authHeader.replace('Bearer ', '') : null);
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (accessToken) TokenBlacklist.revoke(accessToken, 24 * 60 * 60 * 1000);
+  if (refreshToken) TokenBlacklist.revoke(refreshToken, 30 * 24 * 60 * 60 * 1000);
+
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCode.OK,
+    message: 'User logged out successfully',
+    data: null,
+  });
+});
+
 export const AuthControllers = {
   login,
+  logout,
   refreshToken,
   changePassword,
   forgetPassword,

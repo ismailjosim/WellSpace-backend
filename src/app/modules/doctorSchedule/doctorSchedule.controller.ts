@@ -20,10 +20,11 @@ const getAllDoctorSchedules = catchAsync(async (req: Request, res: Response) => 
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'orderBy']);
   const result = await DoctorScheduleService.getAllDoctorSchedulesFromDB(filters, options);
   sendResponse(res, {
-    statusCode: StatusCode.CREATED,
+    statusCode: StatusCode.OK,
     success: true,
     message: 'All Doctors schedule retrieved successfully!',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 const getMySchedule = catchAsync(async (req: Request, res: Response) => {
@@ -31,10 +32,11 @@ const getMySchedule = catchAsync(async (req: Request, res: Response) => {
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'orderBy']);
   const result = await DoctorScheduleService.getMyScheduleFromDB(filters, options, req.user);
   sendResponse(res, {
-    statusCode: StatusCode.CREATED,
+    statusCode: StatusCode.OK,
     success: true,
     message: 'Doctors schedule retrieved successfully!',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 const deleteDoctorScheduleById = catchAsync(async (req: Request, res: Response) => {

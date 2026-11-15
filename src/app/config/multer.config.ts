@@ -58,6 +58,73 @@ const multerUpload = multer({
   },
 });
 
+const prescriptionUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_UPLOAD_SIZE_BYTES,
+    files: 1,
+  },
+  fileFilter: (_req, file, cb) => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      cb(
+        new AppError(StatusCode.BAD_REQUEST, 'Only JPG, PNG, WEBP, GIF, and PDF files are allowed')
+      );
+      return;
+    }
+    cb(null, true);
+  },
+});
+
+export const getSecurePrescriptionUrl = (publicId: string, format: string) => {
+  return cloudinary.utils.private_download_url(publicId, format, {
+    resource_type: 'image',
+    type: 'authenticated',
+    expires_at: Math.floor(Date.now() / 1000) + 300,
+  });
+};
+
+export const uploadPrivatePrescription = async (file: Express.Multer.File) => {
+  const safeName = file.originalname
+    .replace(/\.[^.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-');
+  const publicId = `wellspace/prescriptions/${Math.random().toString(36).substring(2)}-${Date.now()}-${safeName || 'upload'}`;
+  const format =
+    file.mimetype === 'application/pdf'
+      ? 'pdf'
+      : file.mimetype.split('/')[1] === 'jpeg'
+        ? 'jpg'
+        : file.mimetype.split('/')[1];
+
+  const uploadedPublicId = await new Promise<string>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        public_id: publicId,
+        resource_type: 'image',
+        type: 'authenticated',
+      },
+      (error, result) => {
+        if (error) {
+          reject(
+            new AppError(StatusCode.BAD_REQUEST, `Prescription upload failed: ${error.message}`)
+          );
+          return;
+        }
+        if (!result?.public_id) {
+          reject(
+            new AppError(StatusCode.BAD_REQUEST, 'Prescription upload did not return a file ID.')
+          );
+          return;
+        }
+        resolve(result.public_id);
+      }
+    );
+    stream.end(file.buffer);
+  });
+
+  return { publicId: uploadedPublicId, format };
+};
+
 export const deleteFromCloudinary = async (url: string) => {
   try {
     const regex = /\/v\d+\/(.*?)\.(jpg|jpeg|png|gif|webp)$/i;
@@ -79,6 +146,7 @@ export const deleteFromCloudinary = async (url: string) => {
 
 export const fileUploader = {
   multerUpload,
+  prescriptionUpload,
   multiDocUpload: multer({
     storage: storage,
     limits: {

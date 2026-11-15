@@ -64,6 +64,29 @@ export const createAdminIntoDB = async (req: Request) => {
   return result;
 };
 
+export const createShopStaffIntoDB = async (req: Request) => {
+  const { name, email, contactNumber, role } = req.body.shopStaff;
+  const hashedPassword: string = await passwordManage.hashingPassword(req.body.password);
+
+  return prisma.$transaction(async (transactionClient) => {
+    await transactionClient.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role,
+      },
+    });
+
+    return transactionClient.shopStaff.create({
+      data: {
+        name,
+        email,
+        contactNumber,
+      },
+    });
+  });
+};
+
 export const createDoctorIntoDB = async (req: Request) => {
   const hashedPassword: string = await passwordManage.hashingPassword(req.body.password);
   const cloudinaryUrl = req.file?.path;

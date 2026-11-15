@@ -638,7 +638,10 @@ const updateDoctorVerificationDocumentsIntoDB = async (
   });
 
   if (doctor.verificationStatus === 'VERIFIED') {
-    throw new AppError(StatusCode.FORBIDDEN, 'Verified credentials cannot be replaced. Contact an administrator to request an update.');
+    throw new AppError(
+      StatusCode.FORBIDDEN,
+      'Verified credentials cannot be replaced. Contact an administrator to request an update.'
+    );
   }
 
   if (

@@ -46,6 +46,30 @@ const getSingleAdminByIDFromDB = async (id: string) => {
   });
   return result;
 };
+
+const getShopStaffFromDB = async () => {
+  return prisma.user.findMany({
+    where: {
+      role: {
+        in: ['SHOP_MANAGER', 'SHOP_ASSISTANT'],
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      status: true,
+      createdAt: true,
+      shopStaff: {
+        select: {
+          name: true,
+          contactNumber: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
 const updateAdminInfoIntoDB = async (id: string, payload: Partial<Admin>) => {
   // 🚫 Prevent user from updating email
   if ('email' in payload) {
@@ -225,6 +249,7 @@ const exportAuditLogsCsvFromDB = async (filters: {
 export const AdminService = {
   getAllAdminFromDB,
   getSingleAdminByIDFromDB,
+  getShopStaffFromDB,
   updateAdminInfoIntoDB,
   getAuditLogsFromDB,
   exportAuditLogsCsvFromDB,

@@ -59,6 +59,22 @@ const updateAdminInfo = async (req: Request, res: Response) => {
   }
 };
 
+const getShopStaff = async (_req: Request, res: Response) => {
+  try {
+    const result = await AdminService.getShopStaffFromDB();
+    res.status(200).send({
+      success: true,
+      message: 'Shop staff retrieved successfully',
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(500).send({
+      success: false,
+      message: error.message || 'Failed to retrieve shop staff',
+    });
+  }
+};
+
 const getAuditLogs = async (req: Request, res: Response) => {
   try {
     const filters = pick(req.query, [
@@ -120,6 +136,7 @@ export const AdminController = {
   getAllAdmin,
   getSingleAdminByID,
   updateAdminInfo,
+  getShopStaff,
   getAuditLogs,
   exportAuditLogsCsv,
 };

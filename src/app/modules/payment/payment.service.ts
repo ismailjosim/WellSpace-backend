@@ -6,6 +6,7 @@ import type { JwtPayload } from 'jsonwebtoken';
 import AppError from '@/helpers/AppError';
 import StatusCode from '@/utils/statusCode';
 import { stripeConfig } from '@/config/stripe.config';
+import { MedicineService } from '../medicine/medicine.service';
 
 const markSessionAsPaid = async (session: Stripe.Checkout.Session) => {
   const appointmentId = session.metadata?.appointmentId;
@@ -59,7 +60,11 @@ const handleStripeEvent = async (event: Stripe.Event): Promise<void> => {
     case 'checkout.session.async_payment_succeeded': {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.payment_status === 'paid') {
-        await markSessionAsPaid(session);
+        if (session.metadata?.medicineOrderId) {
+          await MedicineService.markMedicineOrderSessionAsPaid(session);
+        } else {
+          await markSessionAsPaid(session);
+        }
       }
       break;
     }

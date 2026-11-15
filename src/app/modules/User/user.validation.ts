@@ -38,6 +38,16 @@ const createAdminValidationSchema = z.object({
   }),
 });
 
+const createShopStaffValidationSchema = z.object({
+  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  shopStaff: z.object({
+    name: z.string().min(1, 'Name cannot be empty'),
+    email: z.string().email('Invalid email format'),
+    contactNumber: z.string().min(1, 'Contact number cannot be empty'),
+    role: z.enum(['SHOP_MANAGER', 'SHOP_ASSISTANT']),
+  }),
+});
+
 const createDoctorValidationSchema = z.object({
   password: z.string().nonempty('Password is required'),
   doctor: z.object({
@@ -68,5 +78,6 @@ const createDoctorValidationSchema = z.object({
 export const UserValidationSchema = {
   createPatientValidationSchema,
   createAdminValidationSchema,
+  createShopStaffValidationSchema,
   createDoctorValidationSchema,
 };

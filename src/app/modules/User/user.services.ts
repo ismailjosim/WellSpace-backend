@@ -5,6 +5,7 @@ import { userSearchableFields } from './user.constant';
 import { buildWhereCondition } from '@/utils/prismaFilter';
 import {
   createAdminIntoDB,
+  createShopStaffIntoDB,
   createDoctorIntoDB,
   createPatientIntoDB,
 } from './user.creation.services';
@@ -46,6 +47,7 @@ const getAllUsersFromDB = async (params: any, options: IOptions) => {
 
 export const UserServices = {
   createAdminIntoDB,
+  createShopStaffIntoDB,
   createPatientIntoDB,
   createDoctorIntoDB,
   getAllUsersFromDB,

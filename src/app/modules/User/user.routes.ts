@@ -22,6 +22,12 @@ router.post(
   UserController.createAdmin
 );
 router.post(
+  '/create-shop-staff',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  validateRequest(UserValidationSchema.createShopStaffValidationSchema),
+  UserController.createShopStaff
+);
+router.post(
   '/create-doctor',
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   fileUploader.multerUpload.single('file'),
@@ -31,7 +37,14 @@ router.post(
 router.get('/', checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN), UserController.getAllUser);
 router.get(
   '/profile',
-  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
+  checkAuth(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.PATIENT,
+    UserRole.DOCTOR,
+    UserRole.SHOP_MANAGER,
+    UserRole.SHOP_ASSISTANT
+  ),
   UserController.getMyProfile
 );
 router.patch(
@@ -41,7 +54,14 @@ router.patch(
 );
 router.patch(
   '/update-my-profile',
-  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.PATIENT, UserRole.DOCTOR),
+  checkAuth(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.PATIENT,
+    UserRole.DOCTOR,
+    UserRole.SHOP_MANAGER,
+    UserRole.SHOP_ASSISTANT
+  ),
   fileUploader.multerUpload.single('file'),
 
   UserController.updateMyProfile

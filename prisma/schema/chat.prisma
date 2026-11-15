@@ -26,4 +26,3 @@ model Message {
   @@index([chatRoomId, createdAt])
   @@map("messages")
 }
-

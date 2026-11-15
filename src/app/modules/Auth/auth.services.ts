@@ -197,6 +197,16 @@ const getMeFromDB = async (userSession: any) => {
           patientHealthData: true,
         },
       },
+      shopStaff: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          contactNumber: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
   });
   return userData;

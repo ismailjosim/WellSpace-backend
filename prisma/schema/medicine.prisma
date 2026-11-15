@@ -1,0 +1,63 @@
+model Medicine {
+  id                   String   @id @default(uuid())
+  name                 String
+  genericName          String
+  brand                String
+  category             String
+  description          String
+  dosageForm           String
+  strength             String
+  manufacturer         String
+  price                Decimal  @db.Decimal(10, 2)
+  stock                Int      @default(0)
+  imageUrl             String?
+  requiresPrescription Boolean  @default(false)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+
+  orderItems MedicineOrderItem[]
+
+  @@index([isActive, category])
+  @@index([name, genericName, brand])
+  @@map("medicines")
+}
+
+model MedicineOrder {
+  id                 String                @id @default(uuid())
+  patientId          String
+  patient            Patient               @relation(fields: [patientId], references: [id])
+  status             MedicineOrderStatus   @default(PENDING_REVIEW)
+  paymentMethod      MedicinePaymentMethod
+  paymentStatus      PaymentStatus         @default(UNPAID)
+  totalAmount        Decimal               @db.Decimal(10, 2)
+  deliveryAddress    String
+  contactNumber      String
+  prescriptionUrl    String?
+  prescriptionFormat String?
+  rejectionReason    String?
+  trackingNumber     String?
+  stripeSessionId    String?               @unique
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @default(now()) @updatedAt
+
+  items MedicineOrderItem[]
+
+  @@index([patientId, createdAt])
+  @@index([status, createdAt])
+  @@map("medicine_orders")
+}
+
+model MedicineOrderItem {
+  id          String        @id @default(uuid())
+  orderId     String
+  order       MedicineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  medicineId  String
+  medicine    Medicine      @relation(fields: [medicineId], references: [id])
+  productName String
+  quantity    Int
+  unitPrice   Decimal       @db.Decimal(10, 2)
+
+  @@index([medicineId])
+  @@map("medicine_order_items")
+}

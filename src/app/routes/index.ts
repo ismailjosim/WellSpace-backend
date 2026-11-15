@@ -15,6 +15,7 @@ import { NotificationRoutes } from '@/modules/notification/notification.routes';
 import { ChatRoutes } from '@/modules/chat/chat.routes';
 import { ConsultationRoutes } from '@/modules/consultation/consultation.routes';
 import { SettingsRoutes } from '@/modules/settings/settings.routes';
+import { MedicineRoutes } from '@/modules/medicine/medicine.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -81,6 +82,10 @@ const moduleRoutes = [
   {
     path: '/settings',
     route: SettingsRoutes,
+  },
+  {
+    path: '/medicine',
+    route: MedicineRoutes,
   },
 ];
 

@@ -7,17 +7,17 @@ model Appointment {
   scheduleId String
   schedule   Schedule @relation(fields: [scheduleId], references: [id])
 
-  videoCallingId String
-  status         AppointmentStatus @default(SCHEDULED)
-  paymentStatus  PaymentStatus     @default(UNPAID)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @default(now()) @updatedAt
-  payment        Payment?
-  prescription   Prescription?
-  reviews        Review[]
-  chatRoom       ChatRoom?
+  videoCallingId      String
+  status              AppointmentStatus    @default(SCHEDULED)
+  paymentStatus       PaymentStatus        @default(UNPAID)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  payment             Payment?
+  prescription        Prescription?
+  reviews             Review[]
+  chatRoom            ChatRoom?
   consultationSession ConsultationSession?
-  reminderLogs   ReminderLog[]
+  reminderLogs        ReminderLog[]
 
   @@index([patientId, createdAt])
   @@index([doctorId, status])

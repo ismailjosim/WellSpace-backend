@@ -3,6 +3,8 @@ enum UserRole {
   ADMIN
   DOCTOR
   PATIENT
+  SHOP_MANAGER
+  SHOP_ASSISTANT
 }
 
 enum UserStatus {
@@ -35,6 +37,21 @@ enum BloodGroup {
 enum PaymentStatus {
   PAID
   UNPAID
+}
+
+enum MedicinePaymentMethod {
+  STRIPE
+  CASH_ON_DELIVERY
+}
+
+enum MedicineOrderStatus {
+  PENDING_REVIEW
+  APPROVED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  REJECTED
+  CANCELLED
 }
 
 enum AppointmentStatus {
@@ -79,4 +96,3 @@ enum ReminderChannel {
   SMS
   PUSH
 }
-

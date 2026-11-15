@@ -29,6 +29,15 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const createShopStaff = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.createShopStaffIntoDB(req);
+  sendResponse(res, {
+    success: true,
+    statusCode: HttpStatus.CREATED,
+    message: 'Shop staff account created successfully',
+    data: result,
+  });
+});
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
   const result = await UserServices.createDoctorIntoDB(req);
   sendResponse(res, {
@@ -82,6 +91,7 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
 export const UserController = {
   createPatient,
   createAdmin,
+  createShopStaff,
   createDoctor,
   getAllUser,
   getMyProfile,

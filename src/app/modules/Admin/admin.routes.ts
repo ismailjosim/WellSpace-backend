@@ -15,6 +15,11 @@ router.get(
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   AdminController.getAuditLogs
 );
+router.get(
+  '/shop-staff',
+  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminController.getShopStaff
+);
 router.get('/', checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN), AdminController.getAllAdmin);
 router.get(
   '/:id',

@@ -11,4 +11,3 @@ model SystemSetting {
   @@index([category])
   @@map("system_settings")
 }
-

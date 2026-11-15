@@ -54,6 +54,13 @@ export const getMyProfileFromDB = async (user: JwtPayload) => {
       });
       break;
 
+    case UserRole.SHOP_MANAGER:
+    case UserRole.SHOP_ASSISTANT:
+      roleBasedData = await prisma.shopStaff.findUnique({
+        where: { email: userInfo.email },
+      });
+      break;
+
     default:
       throw new AppError(StatusCode.FORBIDDEN, 'Invalid user role');
   }
@@ -190,6 +197,18 @@ const updatePatientProfile = async (email: string, updateData: Record<string, an
   });
 };
 
+const updateShopStaffProfile = async (email: string, updateData: Record<string, any>) => {
+  const allowedStaffFields: Record<string, any> = {};
+  if (updateData.name !== undefined) allowedStaffFields.name = updateData.name;
+  if (updateData.contactNumber !== undefined)
+    allowedStaffFields.contactNumber = updateData.contactNumber;
+
+  await prisma.shopStaff.update({
+    where: { email },
+    data: allowedStaffFields,
+  });
+};
+
 export const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
   const existingUser = await prisma.user.findUniqueOrThrow({
     where: {
@@ -211,6 +230,10 @@ export const updateMyProfileIntoDB = async (user: JwtPayload, req: Request) => {
       break;
     case UserRole.PATIENT:
       await updatePatientProfile(existingUser.email, updateData);
+      break;
+    case UserRole.SHOP_MANAGER:
+    case UserRole.SHOP_ASSISTANT:
+      await updateShopStaffProfile(existingUser.email, updateData);
       break;
     default:
       throw new AppError(StatusCode.FORBIDDEN, 'Invalid user role');

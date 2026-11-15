@@ -9,4 +9,3 @@ model ReminderLog {
   @@unique([appointmentId, reminderType, channel])
   @@map("reminder_logs")
 }
-

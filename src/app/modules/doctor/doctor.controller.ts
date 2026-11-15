@@ -78,8 +78,8 @@ const uploadVerificationDocuments = catchAsync(
     const degreeDoc = files?.['degreeDocument']?.[0]?.path;
 
     const result = await DoctorService.updateDoctorVerificationDocumentsIntoDB(req.user, {
-      licenseDocument: licenseDoc || (req.body.licenseDocumentUrl as string),
-      degreeDocument: degreeDoc || (req.body.degreeDocumentUrl as string),
+      licenseDocument: licenseDoc,
+      degreeDocument: degreeDoc,
     });
 
     sendResponse(res, {

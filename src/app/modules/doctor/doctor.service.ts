@@ -637,6 +637,20 @@ const updateDoctorVerificationDocumentsIntoDB = async (
     where: { email: user.email, isDeleted: false },
   });
 
+  if (doctor.verificationStatus === 'VERIFIED') {
+    throw new AppError(StatusCode.FORBIDDEN, 'Verified credentials cannot be replaced. Contact an administrator to request an update.');
+  }
+
+  if (
+    !(files.licenseDocument || doctor.licenseDocumentUrl) ||
+    !(files.degreeDocument || doctor.degreeDocumentUrl)
+  ) {
+    throw new AppError(
+      StatusCode.BAD_REQUEST,
+      'A license certificate and a degree certificate are required before submitting verification.'
+    );
+  }
+
   const updateData: Prisma.DoctorUpdateInput = {
     verificationStatus: 'UNDER_REVIEW',
   };
@@ -676,6 +690,17 @@ const updateDoctorVerificationStatusIntoDB = async (
   });
 
   const isVerified = payload.status === 'VERIFIED';
+  if (isVerified && (!doctor.licenseDocumentUrl || !doctor.degreeDocumentUrl)) {
+    throw new AppError(
+      StatusCode.BAD_REQUEST,
+      'A license certificate and a degree certificate are required before verification.'
+    );
+  }
+
+  if (doctor.verificationStatus === 'VERIFIED' && payload.status === 'REJECTED') {
+    throw new AppError(StatusCode.BAD_REQUEST, 'A verified doctor cannot be rejected.');
+  }
+
   const updatedDoctor = await prisma.doctor.update({
     where: { id: doctorId },
     data: {

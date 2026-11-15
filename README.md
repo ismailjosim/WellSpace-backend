@@ -16,7 +16,7 @@
 
 ## 🌟 Key Features
 
-- **Multi-Role RBAC Security:** Strict privilege segmentation across `SUPER_ADMIN`, `ADMIN`, `DOCTOR`, and `PATIENT` roles via JWT authentication and permission guards.
+- **Multi-Role RBAC Security:** Strict privilege segmentation across `SUPER_ADMIN`, `ADMIN`, `DOCTOR`, `PATIENT`, `SHOP_MANAGER`, and `SHOP_ASSISTANT` roles via JWT authentication and permission guards.
 - **Automated Database Seeding:** Instant seed initialization on startup for the default `SUPER_ADMIN` account using environment variables.
 - **Modular Multi-File Prisma Schema:** Scalable relational architecture segmented into discrete schema domain models (`user`, `appointment`, `consultation`, `patientData`, `schedule`, `prescription`, `audit`, `settings`).
 - **Clinical Lifecycle Management:**
@@ -120,6 +120,7 @@ All routes are served under `/api/v1`:
 | `/chat` | Secure in-app patient-doctor messaging | Authenticated |
 | `/metadata` | Analytic dashboards & meta statistics | Role-dependent |
 | `/settings` | System-wide operational settings | Admin / Super Admin |
+| `/medicine` | Pharmacy catalog, inventory, orders, and overview | Public / Patient / Shop Staff / Admin |
 
 ---
 
@@ -185,12 +186,24 @@ pnpm install
 
 ### 3. Database Migration & Prisma Setup
 ```bash
-# Push schema migrations to PostgreSQL
+# Create/apply migrations during development
 pnpm prisma:migrate
 
 # Generate Prisma Client
 pnpm prisma:generate
 ```
+
+For a new production database, apply committed migrations before starting the API:
+```bash
+pnpm prisma:deploy
+```
+
+If the production database already contains application tables but has never been
+managed by Prisma Migrate, baseline it before using `migrate deploy`. Back up the
+database, confirm which committed migrations are already represented in its
+schema, and mark only those migrations as applied with
+`pnpm exec prisma migrate resolve --applied <migration-name>`. Do not mark a
+pending migration as applied; the pharmacy migration must run normally.
 
 ### 4. Running the Server
 ```bash
@@ -221,9 +234,10 @@ pnpm start
    ```bash
    pnpm install --frozen-lockfile; pnpm run build
    ```
-4. Set **Start Command:**
+4. After the production database has a valid Prisma migration baseline, set
+   **Start Command** so pending additive migrations are applied before the API starts:
    ```bash
-   pnpm run start
+   pnpm run prisma:deploy && pnpm run start
    ```
 5. Supply all environment variables from `.env` in the Render Dashboard (pointing `DATABASE_URL` to your live PostgreSQL database).
 

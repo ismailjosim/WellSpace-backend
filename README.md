@@ -103,7 +103,7 @@ Backend/
 All routes are served under `/api/v1`:
 
 | Route Prefix | Primary Purpose | Auth Level |
-|---|---|---|
+| --- | --- | --- |
 | `/auth` | Login, 2FA, token refresh, password resets | Public / Authenticated |
 | `/user` | Account registration, profile management, status toggles | Varied / RBAC |
 | `/doctor` | Clinician discovery, profile customization, filtering | Public / Doctor / Admin |
@@ -113,10 +113,10 @@ All routes are served under `/api/v1`:
 | `/doctor-schedule` | Doctor slot associations & availability toggles | Doctor / Admin |
 | `/appointment` | Slot booking, rescheduling, and cancellations | Patient / Doctor / Admin |
 | `/payment` | Stripe checkout session initiation & webhooks | Patient / Public Webhook |
-| `/consultation-session`| Telehealth session tracking and status | Doctor / Patient |
-| `/prescription`| Digital prescription issuance and retrieval | Doctor / Patient |
+| `/consultation-session` | Telehealth session tracking and status | Doctor / Patient |
+| `/prescription` | Digital prescription issuance and retrieval | Doctor / Patient |
 | `/review` | Patient feedback and doctor ratings | Patient / Public |
-| `/notifications`| Real-time alerts and user notifications | Authenticated |
+| `/notifications` | Real-time alerts and user notifications | Authenticated |
 | `/chat` | Secure in-app patient-doctor messaging | Authenticated |
 | `/metadata` | Analytic dashboards & meta statistics | Role-dependent |
 | `/settings` | System-wide operational settings | Admin / Super Admin |
@@ -174,17 +174,20 @@ OPEN_ROUTER_API_KEY="sk-or-v1-..."
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
+
 - **Node.js:** `>= 20.x`
 - **PostgreSQL:** `>= 15.x`
 - **pnpm:** `pnpm` package manager
 
 ### 2. Installation
+
 ```bash
 cd Backend
 pnpm install
 ```
 
 ### 3. Database Migration & Prisma Setup
+
 ```bash
 # Create/apply migrations during development
 pnpm prisma:migrate
@@ -194,6 +197,7 @@ pnpm prisma:generate
 ```
 
 For a new production database, apply committed migrations before starting the API:
+
 ```bash
 pnpm prisma:deploy
 ```
@@ -206,6 +210,7 @@ schema, and mark only those migrations as applied with
 pending migration as applied; the pharmacy migration must run normally.
 
 ### 4. Running the Server
+
 ```bash
 # Development mode with hot-reloading
 pnpm dev
@@ -213,9 +218,11 @@ pnpm dev
 # Alternative using ts-node-dev
 pnpm dev:node
 ```
+
 The API server will listen at [http://localhost:5000](http://localhost:5000). On startup, the database connection is verified and the super admin seeder runs automatically.
 
 ### 5. Production Build
+
 ```bash
 # Compile TypeScript to CommonJS dist
 pnpm build
@@ -231,14 +238,18 @@ pnpm start
 1. Create a **Web Service** pointing to your `WellSpace-backend` repository.
 2. Select **Node** environment.
 3. Set **Build Command:**
+
    ```bash
    pnpm install --frozen-lockfile; pnpm run build
    ```
+
 4. After the production database has a valid Prisma migration baseline, set
    **Start Command** so pending additive migrations are applied before the API starts:
+
    ```bash
    pnpm run prisma:deploy && pnpm run start
    ```
+
 5. Supply all environment variables from `.env` in the Render Dashboard (pointing `DATABASE_URL` to your live PostgreSQL database).
 
 ---
@@ -246,4 +257,3 @@ pnpm start
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
